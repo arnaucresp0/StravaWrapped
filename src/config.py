@@ -1,8 +1,9 @@
 from dotenv import load_dotenv
 import os
 
-# Carrega el fitxer .env
-load_dotenv()
+#Load the .env file
+dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(dotenv_path)
 
 STRAVA_CLIENT_ID = os.getenv("STRAVA_CLIENT_ID")
 STRAVA_CLIENT_SECRET = os.getenv("STRAVA_CLIENT_SECRET")
