@@ -10,6 +10,7 @@ app = FastAPI()
 user_tokens = {}
 ACCESS_TOKEN = "baac1838b293ae6306823c"  # Després això ho gestionarem dinàmicament
 
+# Get request for the auth using http://localhost:8000/auth to authorize using strava api the tokens for the app
 @app.get("/auth")
 def auth():
     params = {
@@ -22,30 +23,35 @@ def auth():
     url = "https://www.strava.com/oauth/authorize?" + urlencode(params)
     return RedirectResponse(url)
 
-
+# Get request for the auth using http://localhost:8000/auth to get the tokens and returns the athlete info in json
 @app.get("/exchange_token")
-def exchange_token(code: str):
+async def exchange_token(code: str):
+    url = "https://www.strava.com/oauth/token"
+
     payload = {
         "client_id": config.STRAVA_CLIENT_ID,
         "client_secret": config.STRAVA_CLIENT_SECRET,
         "code": code,
         "grant_type": "authorization_code",
     }
-    res = requests.post("https://www.strava.com/oauth/token", json=payload)
-    data = res.json()
 
-    # Guardem en memòria temporal
-    if "athlete" in data and "id" in data["athlete"]:
-        athlete_id = data["athlete"]["id"]
-        user_tokens[athlete_id] = {
-            "access_token": data.get("access_token"),
-            "refresh_token": data.get("refresh_token"),
-            "expires_at": data.get("expires_at"),
-            "athlete": data["athlete"],
-        }
+    r = requests.post(url, data=payload)
+    data = r.json()
 
-    return JSONResponse(content=data)
+    # 👇 Importem aquí (evita circular imports)
+    from src.token_store import save_tokens
 
+    # Guardem els tokens nous
+    save_tokens({
+        "access_token": data.get("access_token"),
+        "refresh_token": data.get("refresh_token"),
+        "expires_at": data.get("expires_at")
+    })
+
+    return data
+
+
+# Get request for the activities using http://localhost:8000/activities once the .env is with the proper acces_token
 @app.get("/activities")
 def get_activities():
     url = "https://www.strava.com/api/v3/athlete/activities"
