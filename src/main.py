@@ -8,6 +8,7 @@ app = FastAPI()
 
 # Memòria temporal per guardar tokens (només per testing local)
 user_tokens = {}
+ACCESS_TOKEN = "baac1838b293ae6306823c"  # Després això ho gestionarem dinàmicament
 
 @app.get("/auth")
 def auth():
@@ -20,6 +21,7 @@ def auth():
     }
     url = "https://www.strava.com/oauth/authorize?" + urlencode(params)
     return RedirectResponse(url)
+
 
 @app.get("/exchange_token")
 def exchange_token(code: str):
@@ -43,3 +45,16 @@ def exchange_token(code: str):
         }
 
     return JSONResponse(content=data)
+
+@app.get("/activities")
+def get_activities():
+    url = "https://www.strava.com/api/v3/athlete/activities"
+
+    headers = {
+        "Authorization": f"Bearer {config.STRAVA_ACCESS_TOKEN}"
+    }
+
+    response = requests.get(url, headers=headers)
+
+    # Si falla per token caducat ja t'ho diré com arreglar-ho
+    return response.json()
