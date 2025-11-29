@@ -38,7 +38,7 @@ async def exchange_token(code: str):
     r = requests.post(url, data=payload)
     data = r.json()
 
-    # 👇 Importem aquí (evita circular imports)
+    # Import this here to avoid circular imports
     from src.token_store import save_tokens
 
     # Guardem els tokens nous
