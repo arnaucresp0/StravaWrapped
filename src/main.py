@@ -54,13 +54,13 @@ async def exchange_token(code: str):
 # Get request for the activities using http://localhost:8000/activities once the .env is with the proper acces_token
 @app.get("/activities")
 def get_activities():
+    from src.token_manager import get_valid_token
+
+    access_token = get_valid_token()
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+
     url = "https://www.strava.com/api/v3/athlete/activities"
 
-    headers = {
-        "Authorization": f"Bearer {config.STRAVA_ACCESS_TOKEN}"
-    }
-
-    response = requests.get(url, headers=headers)
-
-    # Si falla per token caducat ja t'ho diré com arreglar-ho
-    return response.json()
+    r = requests.get(url, headers=headers)
+    return r.json()
