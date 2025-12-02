@@ -2,13 +2,14 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse, JSONResponse
 import requests
 from urllib.parse import urlencode
+from datetime import datetime, timedelta, timezone
+from src.strava_client import get_all_activities
 import src.config as config  # el nostre fitxer .env carregat
 
 app = FastAPI()
 
 # Memòria temporal per guardar tokens (només per testing local)
 user_tokens = {}
-ACCESS_TOKEN = "baac1838b293ae6306823c"  # Després això ho gestionarem dinàmicament
 
 # Get request for the auth using http://localhost:8000/auth to authorize using strava api the tokens for the app
 @app.get("/auth")
@@ -64,3 +65,35 @@ def get_activities():
 
     r = requests.get(url, headers=headers)
     return r.json()
+
+@app.get("/wrapped")
+async def get_wrapped():
+    activities = get_all_activities()
+
+    one_year_ago = datetime.now(timezone.utc) - timedelta(days=365)
+
+    # Filtració pel darrer any
+    filtered = []
+    for a in activities:
+        if "start_date" not in a:
+            continue
+
+        activity_date = datetime.fromisoformat(a["start_date"].replace("Z", "+00:00"))
+        if activity_date > one_year_ago:
+            filtered.append(a)
+
+    total_distance = sum(a.get("distance", 0) for a in filtered) / 1000  # → km
+    total_time = sum(a.get("moving_time", 0) for a in filtered) / 3600  # → hores
+    total_elevation = sum(a.get("total_elevation_gain", 0) for a in filtered)
+
+    # Conte per tipus d’esport
+    from collections import Counter
+    sports = Counter(a.get("sport_type", "Unknown") for a in filtered)
+
+    return {
+        "activities_last_year": len(filtered),
+        "total_distance_km": round(total_distance, 1),
+        "total_time_hours": round(total_time, 1),
+        "total_elevation_m": total_elevation,
+        "sports_breakdown": sports,
+    }
