@@ -72,7 +72,6 @@ async def get_wrapped():
 
     one_year_ago = datetime.now(timezone.utc) - timedelta(days=365)
 
-    # Filtració pel darrer any
     filtered = []
     for a in activities:
         if "start_date" not in a:
@@ -82,18 +81,47 @@ async def get_wrapped():
         if activity_date > one_year_ago:
             filtered.append(a)
 
-    total_distance = sum(a.get("distance", 0) for a in filtered) / 1000  # → km
-    total_time = sum(a.get("moving_time", 0) for a in filtered) / 3600  # → hores
+    # Estadístiques bàsiques
+    total_distance_km = sum(a.get("distance", 0) for a in filtered) / 1000
+    total_time_hours = sum(a.get("moving_time", 0) for a in filtered) / 3600
+    total_time_minutes = sum(a.get("moving_time", 0) for a in filtered) / 60
+    total_time_days = total_time_minutes / (60 * 24)
     total_elevation = sum(a.get("total_elevation_gain", 0) for a in filtered)
 
-    # Conte per tipus d’esport
+    # Esport dominant
     from collections import Counter
     sports = Counter(a.get("sport_type", "Unknown") for a in filtered)
+    dominant_sport = sports.most_common(1)[0][0] if sports else None
+
+    # Watts totals
+    total_watts = 0
+    for a in filtered:
+        watts = a.get("weighted_average_watts")
+        time = a.get("moving_time", 0)
+        if watts:
+            total_watts += watts * time  # Joules (W*s)
+    total_energy_kwh = round(total_watts / 3600000, 2)
+
+    # Activitat amb més kudos
+    most_kudos_activity = None
+    if filtered:
+        most_kudos_activity = max(filtered, key=lambda x: x.get("kudos_count", 0))
+
+    # Total PRs
+    total_prs = sum(a.get("pr_count", 0) for a in filtered)
 
     return {
         "activities_last_year": len(filtered),
-        "total_distance_km": round(total_distance, 1),
-        "total_time_hours": round(total_time, 1),
+        "total_distance_km": round(total_distance_km, 1),
+        "total_time_minutes": int(total_time_minutes),
+        "total_time_days": round(total_time_days, 2),
         "total_elevation_m": total_elevation,
+        "dominant_sport": dominant_sport,
+        "total_energy_kwh": total_energy_kwh,
+        "most_kudos_activity": {
+            "name": most_kudos_activity.get("name") if most_kudos_activity else None,
+            "kudos": most_kudos_activity.get("kudos_count") if most_kudos_activity else 0
+        },
+        "total_prs": total_prs,
         "sports_breakdown": sports,
     }
