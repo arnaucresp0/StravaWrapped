@@ -40,13 +40,13 @@ def get_wrapped_stats():
         if activity_date > one_year_ago:
             filtered.append(a)
 
-    # Estadístiques bàsiques
+    # Basic stats
     total_distance_km = sum(a.get("distance", 0) for a in filtered) / 1000
     total_time_minutes = sum(a.get("moving_time", 0) for a in filtered) / 60
     total_time_days = total_time_minutes / (60 * 24)
     total_elevation = sum(a.get("total_elevation_gain", 0) for a in filtered)
 
-    # Esport dominant
+    # Most practiced sport
     sports = Counter(a.get("sport_type", "Unknown") for a in filtered)
     dominant_sport = sports.most_common(1)[0][0] if sports else None
 
@@ -60,7 +60,7 @@ def get_wrapped_stats():
 
     total_energy_kwh = round(total_watt_seconds / 3_600_000, 2)
 
-    # Activitat amb més kudos
+    # Most liked activity
     most_kudos_activity = None
     if filtered:
         most_kudos_activity = max(filtered, key=lambda x: x.get("kudos_count", 0))
@@ -71,6 +71,7 @@ def get_wrapped_stats():
     return {
         "activities_last_year": len(filtered),
         "total_distance_km": round(total_distance_km, 1),
+        "distance_comparasion": distance_statistics(total_distance_km),
         "total_time_minutes": int(total_time_minutes),
         "total_time_days": round(total_time_days, 2),
         "total_elevation_m": total_elevation,
@@ -83,3 +84,34 @@ def get_wrapped_stats():
         "total_prs": total_prs,
         "sports_breakdown": sports,
     }
+
+def distance_statistics(total_distance_km):
+    if total_distance_km >= 50  and total_distance_km <= 150:
+        distance_comp = "Barcelona - Girona"
+    elif total_distance_km >= 150  and total_distance_km <= 300:
+        distance_comp = "Barcelona - Perpinyà"
+    elif total_distance_km >= 300  and total_distance_km <= 600:
+        distance_comp = "Barcelona - Madrid"
+    elif total_distance_km >= 600  and total_distance_km <= 1000:
+        distance_comp = "Barcelona - Paris"
+    elif total_distance_km >= 1000  and total_distance_km <= 2000:
+        distance_comp = "Barcelona - Berlin"
+    elif total_distance_km >= 2000  and total_distance_km <= 4000:
+        distance_comp = "Barcelona - Moscou"
+    elif total_distance_km >= 4000  and total_distance_km <= 8000:
+        distance_comp = "Barcelona - Nova York"
+    elif total_distance_km >= 8000  and total_distance_km <= 14000:
+        distance_comp = "Barcelona - Tòquio"
+    else:
+        "Gairebé mitja volta al món."
+    return distance_comp
+
+def elevation_statistics(total_elevation_input):
+    if total_elevation_input >= 50  and total_elevation_input <= 150:
+        elevation_comp = "Barcelona - Girona"
+    elif total_elevation_input >= 150  and total_elevation_input <= 300:
+        elevation_comp = "Barcelona - Perpinyà"
+    else:
+        "Deixa descansar els bessons."
+
+    return elevation_comp
