@@ -1,8 +1,8 @@
 from PIL import Image, ImageDraw, ImageFont
 import os
 
-TEMPLATE_DIR = "assets/templates"
-OUTPUT_DIR = "assets/output"
+TEMPLATE_DIR = "assets/wrapped_cat/input"
+OUTPUT_DIR = "assets/wrapped_cat/output"
 
 def generate_wrapped_image(stats, template_name="wrapped_base.png"):
     """
