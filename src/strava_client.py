@@ -45,6 +45,7 @@ def get_wrapped_stats():
     total_time_minutes = sum(a.get("moving_time", 0) for a in filtered) / 60
     total_time_days = total_time_minutes / (60 * 24)
     total_elevation = sum(a.get("total_elevation_gain", 0) for a in filtered)
+    total_activities = len(filtered)
 
     # Most practiced sport
     sports = Counter(a.get("sport_type", "Unknown") for a in filtered)
@@ -67,9 +68,18 @@ def get_wrapped_stats():
 
     # Total PRs
     total_prs = sum(a.get("pr_count", 0) for a in filtered)
-
+    # === SOCIAL DATA===
+    #Total kudos
+    total_kudos = sum(a.get("kudos_count", 0) for a in filtered)
+    #Total photos
+    total_photos = sum(a.get("total_photo_count", 0) for a in filtered)
+    #Total comments
+    total_comments = sum(a.get("comment_count", 0) for a in filtered)
+    #Ratio company activities
+    total_athlets = sum(a.get("athlete_count", 0) for a in filtered)
+    
     return {
-        "activities_last_year": len(filtered),
+        "activities_last_year": total_activities,
         "total_distance_km": round(total_distance_km, 1),
         "distance_comparasion": distance_statistics(total_distance_km),
         "total_time_minutes": int(total_time_minutes),
@@ -84,6 +94,10 @@ def get_wrapped_stats():
             "kudos": most_kudos_activity.get("kudos_count") if most_kudos_activity else 0
         },
         "total_prs": total_prs,
+        "total_kudos": total_kudos,
+        "total_photos": total_photos,
+        "total_comments": total_comments,
+        "social_ratio": social_ratio(total_athlets, total_activities),
         "sports_breakdown": sports,
     }
 
@@ -117,7 +131,7 @@ def everest_equivalents(total_elevation_m, everest_height_m=8848):
     """
     Calculates how many 'Everests' are equal to your total elevation.
     :param total_elevation_m: Total elevation in last year activties.
-    :param everest_height_m: AEverest height in meters (default 8848).
+    :param everest_height_m: Everest height in meters (default 8848).
     :return: Returns the amount of Everests as a float number
     """
     if everest_height_m <= 0:
@@ -125,4 +139,24 @@ def everest_equivalents(total_elevation_m, everest_height_m=8848):
 
     result = round((total_elevation_m / everest_height_m),2)
 
+    return result
+
+def social_ratio(total_athlets, total_activities):
+    """
+    Calculates the social ratio in your activities that describe if you performed 
+    the actvities mostly alone (f.e. between 1-1.75) in pairs, trios or groups.
+    :param total_athlets: Total athlets count in all the activties
+    :param total_activities: The number of activities.
+    :return: Returns the social ratio.
+    """
+    social_ratio = round((total_athlets - total_activities)/total_activities,2)
+
+    if social_ratio <= 1.75:
+        result = "Solo"
+    elif social_ratio >= 1.75 and social_ratio <=2.75:
+        result = "Duo"
+    elif social_ratio >= 2.75 and social_ratio <= 3.75:
+        result = "Trio"
+    else:
+        result = "Group"
     return result
