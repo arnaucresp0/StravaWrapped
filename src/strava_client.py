@@ -75,8 +75,10 @@ def get_wrapped_stats():
         "total_time_minutes": int(total_time_minutes),
         "total_time_days": round(total_time_days, 2),
         "total_elevation_m": total_elevation,
+        "everest_equivalent":everest_equivalents(total_elevation),
         "dominant_sport": dominant_sport,
         "total_energy_kwh": total_energy_kwh,
+        "house_power_days": round((total_energy_kwh/9), 2),
         "most_kudos_activity": {
             "name": most_kudos_activity.get("name") if most_kudos_activity else None,
             "kudos": most_kudos_activity.get("kudos_count") if most_kudos_activity else 0
@@ -86,6 +88,11 @@ def get_wrapped_stats():
     }
 
 def distance_statistics(total_distance_km):
+    """
+    Calculates a distance comparacion always starting from Barcelona.
+    :param total_distance_km: The total of km performed in last year activities.
+    :return: Returns the a string of the route.
+    """
     if total_distance_km >= 50  and total_distance_km <= 150:
         distance_comp = "Barcelona - Girona"
     elif total_distance_km >= 150  and total_distance_km <= 300:
@@ -106,12 +113,16 @@ def distance_statistics(total_distance_km):
         "Gairebé mitja volta al món."
     return distance_comp
 
-def elevation_statistics(total_elevation_input):
-    if total_elevation_input >= 50  and total_elevation_input <= 150:
-        elevation_comp = "Barcelona - Girona"
-    elif total_elevation_input >= 150  and total_elevation_input <= 300:
-        elevation_comp = "Barcelona - Perpinyà"
-    else:
-        "Deixa descansar els bessons."
+def everest_equivalents(total_elevation_m, everest_height_m=8848):
+    """
+    Calculates how many 'Everests' are equal to your total elevation.
+    :param total_elevation_m: Total elevation in last year activties.
+    :param everest_height_m: AEverest height in meters (default 8848).
+    :return: Returns the amount of Everests as a float number
+    """
+    if everest_height_m <= 0:
+        raise ValueError("The total elevation must be a positive number")
 
-    return elevation_comp
+    result = round((total_elevation_m / everest_height_m),2)
+
+    return result
