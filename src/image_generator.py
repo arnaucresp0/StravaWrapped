@@ -4,79 +4,82 @@ import os
 TEMPLATE_DIR = "assets/wrapped_cat/input"
 OUTPUT_DIR = "assets/wrapped_cat/output"
 
-def generate_wrapped_image(stats, template_name="wrapped_base.png"):
-    """
-    stats: dict amb totes les dades calculades
-    template_name: la imatge base sobre la qual dibuixarem
-    """
+TEMPLATES = {
+    #TODO: DEFINE THE TEXT POSITIONS...
+    "year_overall_cat": {
+        "file": "assets/wrapped_cat/input/year_overall_cat.png",
+        "fields": {
+            "activities_last_year":  {"pos": (200, 620), "size": 80, "color": "white"},
+            "total_elevation_m":    {"pos": (200, 740), "size": 80, "color": "white"},
+            "dominant_sport":       {"pos": (200, 880), "size": 80, "color": "white"},
+            "total_time_minutes":   {"pos": (200, 1030), "size": 80, "color": "white"},
+            "total_distance_km":    {"pos": (200, 1170), "size": 80, "color": "white"},
+        }
+    },
+    "liked_activity": {
+        "file": "assets/wrapped_cat/input/liked_activity_cat.png",
+        "fields": {
+            "activty_name":  {"pos": (200, 620), "size": 80, "color": "white"},
+            "activity_kudos": {"pos": (200, 620), "size": 80, "color": "white"},
+        }
+    },
+    "random_data_cat": {
+        "file": "assets/wrapped_cat/input/random_data_cat.png",
+        "fields": {
+            "photo_count":  {"pos": (200, 620), "size": 80, "color": "white"},
+            "kudos_count":    {"pos": (200, 740), "size": 80, "color": "white"},
+            "comment_count":       {"pos": (200, 880), "size": 80, "color": "white"},
+            "social_ratio":   {"pos": (200, 1030), "size": 80, "color": "white"},
+            "train_time":    {"pos": (200, 1170), "size": 80, "color": "white"},
+        }
+    },
+    "total_elevation_cat": {
+        "file": "assets/wrapped_cat/input/total_elevation_cat.png",
+        "fields": {
+            "total_elevation":  {"pos": (200, 620), "size": 80, "color": "white"},
+            "everest_count":    {"pos": (200, 740), "size": 80, "color": "white"},
+        }
+    },
+    "total_km_cat": {
+        "file": "assets/wrapped_cat/input/total_elevation_cat.png",
+        "fields": {
+            "total_distance":  {"pos": (200, 620), "size": 80, "color": "white"},
+            "distance_comp":    {"pos": (200, 740), "size": 80, "color": "white"},
+        }
+    },
+    "total_pr_cat": {
+        "file": "assets/wrapped_cat/input/total_elevation_cat.png",
+        "fields": {
+            "total_pr":  {"pos": (200, 620), "size": 80, "color": "white"},
+        }
+    },
+    
+    
+}
 
-    # Carreguem plantilla
-    template_path = os.path.join(TEMPLATE_DIR, template_name)
-    img = Image.open(template_path).convert("RGBA")
+def render_template(template_key, stats, output_path):
+    cfg = TEMPLATES[template_key]
 
+    img = Image.open(cfg["file"]).convert("RGBA")
     draw = ImageDraw.Draw(img)
 
-    # Carreguem el tipus de lletra — en pots posar el que vulguis
-    font_path = "assets/fonts/Inter-Bold.ttf"
-    font_big = ImageFont.truetype(font_path, 64)
-    font_small = ImageFont.truetype(font_path, 40)
+    for field, meta in cfg["fields"].items():
+        value = stats.get(field, "")
+        x, y = meta["pos"]
+        size = meta["size"]
+        color = meta.get("color", "white")
 
-    # EXEMPLE POSICIONS (les canviarem segons necessitis)
-    positions = {
-        "total_distance": (120, 300),
-        "total_elevation": (120, 420),
-        "dominant_sport": (120, 540),
-        "total_time": (120, 660),
-        "total_energy": (120, 780),
-        "total_activities": (120, 900)
-    }
+        font = ImageFont.truetype("assetes/fonts\Montserrat-Arabic Regular/Montserrat-Arabic Regular.ttf", size)
 
-    # Escritura de dades
-    draw.text(
-        positions["total_distance"],
-        f"{stats['total_distance_km']} km",
-        font=font_big,
-        fill="white",
-    )
+        draw.text((x, y), str(value), font=font, fill=color)
 
-    draw.text(
-        positions["total_elevation"],
-        f"{stats['total_elevation_m']} m",
-        font=font_big,
-        fill="white",
-    )
-
-    draw.text(
-        positions["dominant_sport"],
-        stats["dominant_sport"],
-        font=font_big,
-        fill="white",
-    )
-
-    draw.text(
-        positions["total_time"],
-        f"{stats['total_time_days']} dies",
-        font=font_big,
-        fill="white",
-    )
-
-    draw.text(
-        positions["total_energy"],
-        f"{stats['total_energy_kwh']} kWh",
-        font=font_big,
-        fill="white",
-    )
-
-    draw.text(
-        positions["total_activities"],
-        f"{stats['activities_last_year']} activitats",
-        font=font_big,
-        fill="white",
-    )
-
-    # Guardem resultat
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    output_path = os.path.join(OUTPUT_DIR, "wrapped_output.png")
     img.save(output_path)
-
     return output_path
+
+def generate_wrapped_images(stats):
+    outputs = {}
+    for key in TEMPLATES:
+        out = f"output/{key}.png"
+        render_template(key, stats, out)
+        outputs[key] = out
+    return outputs

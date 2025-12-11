@@ -76,6 +76,6 @@ def get_wrapped():
 async def generate_wrapped_image_endpoint():
     stats = get_wrapped_stats()   # ja tens un endpoint que calcula totes les dades
 
-    output = generate_wrapped_image(stats)
+    output = generate_wrapped_images(stats)
     return FileResponse(output, media_type="image/png")
 """
