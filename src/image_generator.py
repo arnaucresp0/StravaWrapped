@@ -5,15 +5,15 @@ TEMPLATE_DIR = "assets/wrapped_cat/input"
 OUTPUT_DIR = "assets/wrapped_cat/output"
 
 TEMPLATES = {
-    #TODO: DEFINE THE TEXT POSITIONS...
+    # Done!
     "year_overall_cat": {
         "file": "assets/wrapped_cat/input/year_overall_cat.png",
         "fields": {
-            "activities_last_year":  {"pos": (200, 620), "size": 80, "color": "white"},
-            "total_elevation_m":    {"pos": (200, 740), "size": 80, "color": "white"},
-            "dominant_sport":       {"pos": (200, 880), "size": 80, "color": "white"},
-            "total_time_minutes":   {"pos": (200, 1030), "size": 80, "color": "white"},
-            "total_distance_km":    {"pos": (200, 1170), "size": 80, "color": "white"},
+            "activities_last_year":  {"pos": (740, 905), "size": 44, "color": "white"},
+            "total_elevation_m":    {"pos": (800, 1105), "size": 44, "color": "white"},
+            "dominant_sport":       {"pos": (825, 1285), "size": 44, "color": "white"},
+            "total_time_minutes":   {"pos": (720, 1465), "size": 44, "color": "white"},
+            "total_distance_km":    {"pos": (515, 1655), "size": 44, "color": "white"},
         }
     }, 
     # Done!
