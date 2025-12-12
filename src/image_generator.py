@@ -24,54 +24,65 @@ TEMPLATES = {
             "activity_kudos": {"pos": (540, 1390), "size": 44, "color": "white"},
         }
     },
-    #TODO: DEFINE THE TEXT POSITIONS...
+    # Done!
     "random_data_cat": {
         "file": "assets/wrapped_cat/input/random_data_cat.png",
         "fields": {
-            "photo_count":  {"pos": (200, 620), "size": 80, "color": "white"},
-            "kudos_count":    {"pos": (200, 740), "size": 80, "color": "white"},
-            "comment_count":       {"pos": (200, 880), "size": 80, "color": "white"},
-            "social_ratio":   {"pos": (200, 1030), "size": 80, "color": "white"},
-            "train_time":    {"pos": (200, 1170), "size": 80, "color": "white"},
+            "photo_count":  {"pos": (730, 930), "size": 38, "color": "white"},
+            "kudos_count":    {"pos": (680, 1085), "size": 38, "color": "white"},
+            "comment_count":       {"pos": (810, 1230), "size": 38, "color": "white"},
+            "train_time":    {"pos": (600, 1385), "size": 38, "color": "white"},
+            "total_mates":      {"pos": (735, 1535), "size": 38, "color": "white"},
+            "social_ratio":   {"pos": (440, 1685), "size": 38, "color": "white"},
         }
     },
-    #TODO: DEFINE THE TEXT POSITIONS...
+    # Done!
     "total_elevation_cat": {
         "file": "assets/wrapped_cat/input/total_elevation_cat.png",
         "fields": {
-            "total_elevation":  {"pos": (200, 620), "size": 80, "color": "white"},
-            "everest_count":    {"pos": (200, 740), "size": 80, "color": "white"},
+            "total_elevation":  {"pos": (540, 1225), "size": 44, "color": "white"},
+            "everest_count":    {"pos": (540, 1625), "size": 44, "color": "white"},
         }
     },
-    #TODO: DEFINE THE TEXT POSITIONS...
+    # Done!
     "total_km_cat": {
         "file": "assets/wrapped_cat/input/total_elevation_cat.png",
         "fields": {
-            "total_distance":  {"pos": (200, 620), "size": 80, "color": "white"},
-            "distance_comp":    {"pos": (200, 740), "size": 80, "color": "white"},
+            "total_distance":  {"pos": (540, 1065), "size": 44, "color": "white"},
+            "distance_comp":    {"pos": (540, 1540), "size": 44, "color": "white"},
         }
     },
-    #TODO: DEFINE THE TEXT POSITIONS...
+    # Done!
     "total_time_cat": {
         "file": "assets/wrapped_cat/input/total_time_cat.png",
         "fields": {
-            "total_time_minutes":  {"pos": (200, 620), "size": 80, "color": "white"},
-            "total_time_days":    {"pos": (200, 740), "size": 80, "color": "white"},
+            "total_time_minutes":  {"pos": (540, 1300), "size": 44, "color": "white"},
+            "total_time_days":    {"pos": (540, 1600), "size": 44, "color": "white"},
         }
     },
-    #TODO: DEFINE THE TEXT POSITIONS...
+    # Done!
     "total_pr_cat": {
         "file": "assets/wrapped_cat/input/total_pr_cat.png",
         "fields": {
-            "total_pr":  {"pos": (200, 620), "size": 80, "color": "white"},
+            "total_pr":  {"pos": (540, 1060), "size": 44, "color": "white"},
         }
     },
-    #TODO: DEFINE THE TEXT POSITIONS...
+    # Done!
     "total_watts_cat": {
         "file": "assets/wrapped_cat/input/total_watts_cat.png",
         "fields": {
-            "total_kWh":  {"pos": (200, 620), "size": 80, "color": "white"},
-            "total_house_power":    {"pos": (200, 740), "size": 80, "color": "white"},
+            "total_kWh":  {"pos": (540, 925), "size": 44, "color": "white"},
+            "total_house_power":    {"pos": (540, 1350), "size": 44, "color": "white"},
+        }
+    },
+    #TODO: DEFINE THE TEXT POSITIONS...
+    "multi_sport_cat": {
+        "file": "assets/wrapped_cat/input/multi_sport_cat.png",
+        "fields": {
+            "total_sports":  {"pos": (200, 620), "size": 44, "color": "white"},
+            "main_sport":    {"pos": (200, 740), "size": 44, "color": "white"},
+            "secondary_sport": {"pos": (200, 740), "size": 44, "color": "white"},
+            "third_sport":  {"pos": (200, 740), "size": 44, "color": "white"},
         }
     }
 }
