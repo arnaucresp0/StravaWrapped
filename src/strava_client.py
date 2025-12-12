@@ -49,6 +49,7 @@ def get_wrapped_stats():
 
     # Most practiced sport
     sports = Counter(a.get("sport_type", "Unknown") for a in filtered)
+    unique_sports_count = len([s for s in sports if s != "Unknown"])
     dominant_sport = sports.most_common(1)[0][0] if sports else None
 
     # Watts → kWh
@@ -87,6 +88,8 @@ def get_wrapped_stats():
         "total_elevation_m": total_elevation,
         "everest_equivalent":everest_equivalents(total_elevation),
         "dominant_sport": dominant_sport,
+        "sports_practiced": unique_sports_count,
+        "sport_podium": sport_podium(sports),
         "total_energy_kwh": total_energy_kwh,
         "house_power_days": round((total_energy_kwh/9), 2),
         "most_kudos_activity": {
@@ -160,3 +163,21 @@ def social_ratio(total_athlets, total_activities):
     else:
         result = "Group"
     return result
+
+def sport_podium(sport_data):
+    podium_data = {
+    "first":  {"sport": None, "count": 0},
+    "second": {"sport": None, "count": 0},
+    "third":  {"sport": None, "count": 0},
+    }
+
+    podium = sport_data.most_common(3)
+
+    if len(podium) > 0:
+        podium_data["first"] = {"sport": podium[0][0], "count": podium[0][1]}
+    if len(podium) > 1:
+        podium_data["second"] = {"sport": podium[1][0], "count": podium[1][1]}
+    if len(podium) > 2:
+        podium_data["third"] = {"sport": podium[2][0], "count": podium[2][1]}
+    
+    return podium_data
