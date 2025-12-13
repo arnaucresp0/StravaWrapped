@@ -20,7 +20,7 @@ TEMPLATES = {
     "liked_activity": {
         "file": "assets/wrapped_cat/input/liked_activity_cat.png",
         "fields": {
-            "activty_name":  {"pos": (540, 1280), "size": 44, "color": "white"},
+            "activity_name":  {"pos": (540, 1280), "size": 44, "color": "white"},
             "activity_kudos": {"pos": (540, 1390), "size": 44, "color": "white"},
         }
     },
@@ -40,15 +40,15 @@ TEMPLATES = {
     "total_elevation_cat": {
         "file": "assets/wrapped_cat/input/total_elevation_cat.png",
         "fields": {
-            "total_elevation":  {"pos": (540, 1225), "size": 44, "color": "white"},
+            "total_elevation_m":  {"pos": (540, 1225), "size": 44, "color": "white"},
             "everest_count":    {"pos": (540, 1625), "size": 44, "color": "white"},
         }
     },
     # Done!
     "total_km_cat": {
-        "file": "assets/wrapped_cat/input/total_elevation_cat.png",
+        "file": "assets/wrapped_cat/input/total_km_cat.png",
         "fields": {
-            "total_distance":  {"pos": (540, 1065), "size": 44, "color": "white"},
+            "total_distance_km":  {"pos": (540, 1065), "size": 44, "color": "white"},
             "distance_comp":    {"pos": (540, 1540), "size": 44, "color": "white"},
         }
     },
@@ -75,41 +75,101 @@ TEMPLATES = {
             "total_house_power":    {"pos": (540, 1350), "size": 44, "color": "white"},
         }
     },
-    #TODO: DEFINE THE TEXT POSITIONS...
+    # Done!
     "multi_sport_cat": {
         "file": "assets/wrapped_cat/input/multi_sport_cat.png",
         "fields": {
-            "total_sports":  {"pos": (200, 620), "size": 44, "color": "white"},
-            "main_sport":    {"pos": (200, 740), "size": 44, "color": "white"},
-            "secondary_sport": {"pos": (200, 740), "size": 44, "color": "white"},
-            "third_sport":  {"pos": (200, 740), "size": 44, "color": "white"},
+            "total_sports":  {"pos": (540, 850), "size": 44, "color": "white"},
+            "main_sport":    {"pos": (350, 1260), "size": 44, "color": "white"},
+            "secondary_sport": {"pos": (350, 1360), "size": 44, "color": "white"},
+            "third_sport":  {"pos": (350, 1460), "size": 44, "color": "white"},
         }
     }
 }
 
-def render_template(template_key, stats, output_path):
-    cfg = TEMPLATES[template_key]
+FIELD_MAPPING = {
+    # --- BASIC ---
+    "activities_last_year": lambda s: str(s["activities_last_year"]),
+    "total_distance_km":    lambda s: str(s["total_distance_km"]),
+    "total_time_minutes":   lambda s: str(s["total_time_minutes"]),
+    "total_time_days":      lambda s: str(s["total_time_days"]),
+    "total_elevation_m":      lambda s: str(s["total_elevation_m"]),
+    "dominant_sport":       lambda s: str(s["dominant_sport"]),
 
-    img = Image.open(cfg["file"]).convert("RGBA")
+    # --- COMPARATIVE ---
+    "distance_comp":        lambda s: str(s["distance_comparasion"]),
+    "everest_count":        lambda s: str(s["everest_equivalent"]),
+
+    # --- ENERGY ---
+    "total_kWh":            lambda s: str(s["total_energy_kwh"]),
+    "total_house_power":    lambda s: str(s["house_power_days"]),
+
+    # --- ACTIVITY HIGHLIGHT ---
+    "activity_name":         lambda s: s["most_kudos_activity"]["name"] or "",
+    "activity_kudos":       lambda s: str(s["most_kudos_activity"]["kudos"]),
+
+    # --- SOCIAL ---
+    "photo_count":          lambda s: str(s["total_photos"]),
+    "kudos_count":          lambda s: str(s["total_kudos"]),
+    "comment_count":        lambda s: str(s["total_comments"]),
+    "social_ratio":         lambda s: str(s["social_ratio"]),
+    "train_time":           lambda s: str(s["total_time_days"]),
+    "total_mates":          lambda s: str(s["sports_practiced"]),
+
+    # --- PRs ---
+    "total_pr":             lambda s: str(s["total_prs"]),
+
+    # --- MULTI SPORT ---
+    "total_sports":         lambda s: str(s["sports_practiced"]),
+    "main_sport":           lambda s: _format_podium(s, "first"),
+    "secondary_sport":      lambda s: _format_podium(s, "second"),
+    "third_sport":          lambda s: _format_podium(s, "third"),
+}
+
+def _format_podium(stats, position):
+    data = stats["sport_podium"].get(position)
+    if not data or not data["sport"]:
+        return ""
+    return f'{data["sport"]} ({data["count"]})'
+
+
+def resolve_field(field_name: str, stats: dict) -> str:
+    resolver = FIELD_MAPPING.get(field_name)
+    if not resolver:
+        raise ValueError(f"Field '{field_name}' not defined in FIELD_MAPPING")
+    return resolver(stats)
+
+def load_font(size):
+    try:
+        return ImageFont.truetype("assets/fonts/YourFont.ttf", size)
+    except IOError:
+        return ImageFont.load_default()
+
+def render_template(template_name: str, stats: dict, output_path: str):
+    template = TEMPLATES[template_name]
+
+    img = Image.open(template["file"]).convert("RGBA")
     draw = ImageDraw.Draw(img)
 
-    for field, meta in cfg["fields"].items():
-        value = stats.get(field, "")
-        x, y = meta["pos"]
-        size = meta["size"]
-        color = meta.get("color", "white")
+    for field, cfg in template["fields"].items():
+        text = resolve_field(field, stats)
+        # Do not draw if text is None
+        if not text:
+            continue
+        #Load the font for text
+        font = load_font(cfg["size"])
 
-        font = ImageFont.truetype("assetes/fonts\Montserrat-Arabic Regular/Montserrat-Arabic Regular.ttf", size)
-
-        draw.text((x, y), str(value), font=font, fill=color)
+        draw.text(
+            cfg["pos"],
+            text,
+            fill=cfg["color"],
+            font=font
+        )
 
     img.save(output_path)
-    return output_path
 
 def generate_wrapped_images(stats):
-    outputs = {}
-    for key in TEMPLATES:
-        out = f"output/{key}.png"
-        render_template(key, stats, out)
-        outputs[key] = out
-    return outputs
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    for template_name in TEMPLATES:
+        output = os.path.join(OUTPUT_DIR, f"{template_name}.png")
+        render_template(template_name, stats, output)
