@@ -4,7 +4,7 @@ import requests
 from urllib.parse import urlencode
 from datetime import datetime, timedelta, timezone
 from src.strava_client import get_wrapped_stats
-#from src.image_generator import generate_wrapped_image
+from src.image_generator import generate_wrapped_images
 import src.config as config  # el nostre fitxer .env carregat
 
 app = FastAPI()
@@ -71,11 +71,10 @@ def get_activities():
 def get_wrapped():
     return get_wrapped_stats()
 
-"""
+
 @app.get("/wrapped/image")
 async def generate_wrapped_image_endpoint():
     stats = get_wrapped_stats()   # ja tens un endpoint que calcula totes les dades
 
     output = generate_wrapped_images(stats)
     return FileResponse(output, media_type="image/png")
-"""
