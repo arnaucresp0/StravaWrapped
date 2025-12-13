@@ -101,6 +101,7 @@ def get_wrapped_stats():
         "total_photos": total_photos,
         "total_comments": total_comments,
         "social_ratio": social_ratio(total_athlets, total_activities),
+        "train_time": training_time_profile(filtered),
         "sports_breakdown": sports,
     }
 
@@ -181,3 +182,44 @@ def sport_podium(sport_data):
         podium_data["third"] = {"sport": podium[2][0], "count": podium[2][1]}
     
     return podium_data
+
+def training_time_profile(activities):
+    """
+    activities: iterable d'activitats Strava amb camp 'start_date'
+    retorna: string descriptiu (ex: 'Matiner', 'De tardes', 'Nocturn')
+    """
+
+    if not activities:
+        return None
+
+    counter = Counter()
+
+    for act in activities:
+        start_date = act.get("start_date")
+        if not start_date:
+            continue
+
+        # Parse ISO 8601 UTC
+        dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        hour = dt.hour
+
+        if 5 <= hour < 12:
+            counter["morning"] += 1
+        elif 12 <= hour < 19:
+            counter["afternoon"] += 1
+        else:
+            counter["night"] += 1
+
+    if not counter:
+        return None
+
+    dominant = counter.most_common(1)[0][0]
+
+    # Text final (ja en l’idioma que vulguis)
+    mapping = {
+        "morning": "Matiner",
+        "afternoon": "De tardes",
+        "night": "Nocturn",
+    }
+
+    return mapping[dominant]
