@@ -4,6 +4,8 @@ import os
 TEMPLATE_DIR = "assets/wrapped_cat/input"
 OUTPUT_DIR = "assets/wrapped_cat/output"
 
+SCALE = 2  # Trying this to improve text quality
+
 TEMPLATES = {
     # Done!
     "year_overall_cat": {
@@ -141,7 +143,7 @@ def resolve_field(field_name: str, stats: dict) -> str:
 
 def load_font(size):
     try:
-        return ImageFont.truetype("assets/fonts/YourFont.ttf", size)
+        return ImageFont.truetype("assets\fonts\Montserrat_Arabic_Regular\E:\PROJECTES\StravaWrapped\assets\fonts\Montserrat_Arabic_Regular\Montserrat_Arabic_Regular.ttf", size)
     except IOError:
         return ImageFont.load_default()
 
@@ -149,24 +151,36 @@ def render_template(template_name: str, stats: dict, output_path: str):
     template = TEMPLATES[template_name]
 
     img = Image.open(template["file"]).convert("RGBA")
+
+    if SCALE != 1:
+        img = img.resize(
+            (img.width * SCALE, img.height * SCALE),
+            Image.Resampling.LANCZOS
+        )
+
     draw = ImageDraw.Draw(img)
 
     for field, cfg in template["fields"].items():
         text = resolve_field(field, stats)
-        # Do not draw if text is None
         if not text:
             continue
-        #Load the font for text
-        font = load_font(cfg["size"])
+
+        font = load_font(cfg["size"] * SCALE)
+
+        scaled_pos = (
+            cfg["pos"][0] * SCALE,
+            cfg["pos"][1] * SCALE
+        )
 
         draw.text(
-            cfg["pos"],
+            scaled_pos,
             text,
             fill=cfg["color"],
             font=font
         )
 
     img.save(output_path)
+
 
 def generate_wrapped_images(stats):
     outputs = []
