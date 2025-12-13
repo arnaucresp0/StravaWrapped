@@ -5,86 +5,91 @@ TEMPLATE_DIR = "assets/wrapped_cat/input"
 OUTPUT_DIR = "assets/wrapped_cat/output"
 
 SCALE = 2  # Trying this to improve text quality
+FONT_PATH = os.path.join(
+    "assets", "fonts", "Montserrat_Arabic_Regular", "Montserrat_Arabic_Regular.ttf"
+)
+TEXT_SIZE = 48
+TEXT_COLOR = "black"
 
 TEMPLATES = {
     # Done!
     "year_overall_cat": {
         "file": "assets/wrapped_cat/input/year_overall_cat.png",
         "fields": {
-            "activities_last_year":  {"pos": (740, 905), "size": 44, "color": "white"},
-            "total_elevation_m":    {"pos": (800, 1105), "size": 44, "color": "white"},
-            "dominant_sport":       {"pos": (825, 1285), "size": 44, "color": "white"},
-            "total_time_minutes":   {"pos": (720, 1465), "size": 44, "color": "white"},
-            "total_distance_km":    {"pos": (515, 1655), "size": 44, "color": "white"},
+            "activities_last_year":  {"pos": (740, 905), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_elevation_m":    {"pos": (800, 1105), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "dominant_sport":       {"pos": (825, 1285), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_time_minutes":   {"pos": (720, 1465), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_distance_km":    {"pos": (515, 1655), "size": TEXT_SIZE, "color": TEXT_COLOR},
         }
     }, 
     # Done!
     "liked_activity": {
         "file": "assets/wrapped_cat/input/liked_activity_cat.png",
         "fields": {
-            "activity_name":  {"pos": (540, 1280), "size": 44, "color": "white"},
-            "activity_kudos": {"pos": (540, 1390), "size": 44, "color": "white"},
+            "activity_name":  {"pos": (540, 1280), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "activity_kudos": {"pos": (540, 1390), "size": TEXT_SIZE, "color": TEXT_COLOR},
         }
     },
     # Done!
     "random_data_cat": {
         "file": "assets/wrapped_cat/input/random_data_cat.png",
         "fields": {
-            "photo_count":  {"pos": (730, 930), "size": 38, "color": "white"},
-            "kudos_count":    {"pos": (680, 1085), "size": 38, "color": "white"},
-            "comment_count":       {"pos": (810, 1230), "size": 38, "color": "white"},
-            "train_time":    {"pos": (600, 1385), "size": 38, "color": "white"},
-            "total_mates":      {"pos": (735, 1535), "size": 38, "color": "white"},
-            "social_ratio":   {"pos": (440, 1685), "size": 38, "color": "white"},
+            "photo_count":  {"pos": (730, 930), "size": 40, "color": TEXT_COLOR},
+            "kudos_count":    {"pos": (680, 1085), "size": 40, "color": TEXT_COLOR},
+            "comment_count":       {"pos": (810, 1230), "size": 40, "color": TEXT_COLOR},
+            "train_time":    {"pos": (600, 1385), "size": 40, "color": TEXT_COLOR},
+            "total_mates":      {"pos": (735, 1535), "size": 40, "color": TEXT_COLOR},
+            "social_ratio":   {"pos": (440, 1685), "size": 40, "color": TEXT_COLOR},
         }
     },
     # Done!
     "total_elevation_cat": {
         "file": "assets/wrapped_cat/input/total_elevation_cat.png",
         "fields": {
-            "total_elevation_m":  {"pos": (540, 1225), "size": 44, "color": "white"},
-            "everest_count":    {"pos": (540, 1625), "size": 44, "color": "white"},
+            "total_elevation_m":  {"pos": (540, 1225), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "everest_count":    {"pos": (540, 1625), "size": TEXT_SIZE, "color": TEXT_COLOR},
         }
     },
     # Done!
     "total_km_cat": {
         "file": "assets/wrapped_cat/input/total_km_cat.png",
         "fields": {
-            "total_distance_km":  {"pos": (540, 1065), "size": 44, "color": "white"},
-            "distance_comp":    {"pos": (540, 1540), "size": 44, "color": "white"},
+            "total_distance_km":  {"pos": (540, 1065), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "distance_comp":    {"pos": (540, 1540), "size": TEXT_SIZE, "color": TEXT_COLOR},
         }
     },
     # Done!
     "total_time_cat": {
         "file": "assets/wrapped_cat/input/total_time_cat.png",
         "fields": {
-            "total_time_minutes":  {"pos": (540, 1300), "size": 44, "color": "white"},
-            "total_time_days":    {"pos": (540, 1600), "size": 44, "color": "white"},
+            "total_time_minutes":  {"pos": (540, 1300), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_time_days":    {"pos": (540, 1600), "size": TEXT_SIZE, "color": TEXT_COLOR},
         }
     },
     # Done!
     "total_pr_cat": {
         "file": "assets/wrapped_cat/input/total_pr_cat.png",
         "fields": {
-            "total_pr":  {"pos": (540, 1060), "size": 44, "color": "white"},
+            "total_pr":  {"pos": (540, 1060), "size": TEXT_SIZE, "color": TEXT_COLOR},
         }
     },
     # Done!
     "total_watts_cat": {
         "file": "assets/wrapped_cat/input/total_watts_cat.png",
         "fields": {
-            "total_kWh":  {"pos": (540, 925), "size": 44, "color": "white"},
-            "total_house_power":    {"pos": (540, 1350), "size": 44, "color": "white"},
+            "total_kWh":  {"pos": (540, 925), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_house_power":    {"pos": (540, 1350), "size": TEXT_SIZE, "color": TEXT_COLOR},
         }
     },
     # Done!
     "multi_sport_cat": {
         "file": "assets/wrapped_cat/input/multi_sport_cat.png",
         "fields": {
-            "total_sports":  {"pos": (540, 850), "size": 44, "color": "white"},
-            "main_sport":    {"pos": (350, 1260), "size": 44, "color": "white"},
-            "secondary_sport": {"pos": (350, 1360), "size": 44, "color": "white"},
-            "third_sport":  {"pos": (350, 1460), "size": 44, "color": "white"},
+            "total_sports":  {"pos": (540, 850), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "main_sport":    {"pos": (350, 1260), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "secondary_sport": {"pos": (350, 1360), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "third_sport":  {"pos": (350, 1460), "size": TEXT_SIZE, "color": TEXT_COLOR},
         }
     }
 }
@@ -143,8 +148,9 @@ def resolve_field(field_name: str, stats: dict) -> str:
 
 def load_font(size):
     try:
-        return ImageFont.truetype("assets\fonts\Montserrat_Arabic_Regular\E:\PROJECTES\StravaWrapped\assets\fonts\Montserrat_Arabic_Regular\Montserrat_Arabic_Regular.ttf", size)
-    except IOError:
+        return ImageFont.truetype(FONT_PATH, size)
+    except IOError as e:
+        print(f"[FONT ERROR] {e}")
         return ImageFont.load_default()
 
 def render_template(template_name: str, stats: dict, output_path: str):
