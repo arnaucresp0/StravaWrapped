@@ -169,7 +169,9 @@ def render_template(template_name: str, stats: dict, output_path: str):
     img.save(output_path)
 
 def generate_wrapped_images(stats):
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    outputs = []
     for template_name in TEMPLATES:
-        output = os.path.join(OUTPUT_DIR, f"{template_name}.png")
+        output = f"assets/wrapped_cat/output/{template_name}.png"
         render_template(template_name, stats, output)
+        outputs.append(output)
+    return outputs
