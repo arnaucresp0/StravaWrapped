@@ -6,7 +6,7 @@ from pathlib import Path
 TEMPLATE_DIR = "assets/wrapped_cat/input"
 STORAGE_ROOT = Path("storage")
 
-SCALE = 2  # Trying this to improve text quality
+SCALE = 3  # Trying this to improve text quality
 FONT_PATH = os.path.join(
     "assets", "fonts", "Montserrat_Arabic_Regular", "Montserrat_Arabic_Regular.ttf"
 )
@@ -18,80 +18,80 @@ TEMPLATES = {
     "year_overall_cat": {
         "file": "assets/wrapped_cat/input/year_overall_cat.png",
         "fields": {
-            "activities_last_year":  {"pos": (740, 905), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "total_elevation_m":    {"pos": (800, 1105), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "dominant_sport":       {"pos": (825, 1285), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "total_time_minutes":   {"pos": (720, 1465), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "total_distance_km":    {"pos": (515, 1655), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "activities_last_year":  {"pos": (720, 860), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_elevation_m":    {"pos": (800, 1045), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "dominant_sport":       {"pos": (825, 1230), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_time_minutes":   {"pos": (720, 1410), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_distance_km":    {"pos": (515, 1600), "size": TEXT_SIZE, "color": TEXT_COLOR},
         }
     }, 
-    # Done!
+    # Done! (pending to review activity name pos)
     "liked_activity": {
         "file": "assets/wrapped_cat/input/liked_activity_cat.png",
         "fields": {
-            "activity_name":  {"pos": (540, 1280), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "activity_kudos": {"pos": (540, 1390), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "activity_name":  {"pos": (150, 1280), "size": 35, "color": TEXT_COLOR},
+            "activity_kudos": {"pos": (515, 1390), "size": 85, "color": TEXT_COLOR},
         }
     },
     # Done!
     "random_data_cat": {
         "file": "assets/wrapped_cat/input/random_data_cat.png",
         "fields": {
-            "photo_count":  {"pos": (730, 930), "size": 40, "color": TEXT_COLOR},
-            "kudos_count":    {"pos": (680, 1085), "size": 40, "color": TEXT_COLOR},
-            "comment_count":       {"pos": (810, 1230), "size": 40, "color": TEXT_COLOR},
-            "train_time":    {"pos": (600, 1385), "size": 40, "color": TEXT_COLOR},
-            "total_mates":      {"pos": (735, 1535), "size": 40, "color": TEXT_COLOR},
-            "social_ratio":   {"pos": (440, 1685), "size": 40, "color": TEXT_COLOR},
+            "photo_count":  {"pos": (730, 882), "size": 44, "color": TEXT_COLOR},
+            "kudos_count":    {"pos": (680, 1035), "size": 44, "color": TEXT_COLOR},
+            "comment_count":       {"pos": (810, 1180), "size": 44, "color": TEXT_COLOR},
+            "train_time":    {"pos": (600, 1333), "size": 44, "color": TEXT_COLOR},
+            "total_mates":      {"pos": (735, 1485), "size": 44, "color": TEXT_COLOR},
+            "social_ratio":   {"pos": (440, 1637), "size": 44, "color": TEXT_COLOR},
         }
     },
     # Done!
     "total_elevation_cat": {
         "file": "assets/wrapped_cat/input/total_elevation_cat.png",
         "fields": {
-            "total_elevation_m":  {"pos": (540, 1225), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "everest_count":    {"pos": (540, 1625), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_elevation_m":  {"pos": (460, 1225), "size": 60, "color": TEXT_COLOR},
+            "everest_count":    {"pos": (510, 1625), "size": 60, "color": TEXT_COLOR},
         }
     },
     # Done!
     "total_km_cat": {
         "file": "assets/wrapped_cat/input/total_km_cat.png",
         "fields": {
-            "total_distance_km":  {"pos": (540, 1065), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "distance_comp":    {"pos": (540, 1540), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_distance_km":  {"pos": (430, 1065), "size": 60, "color": TEXT_COLOR},
+            "distance_comp":    {"pos": (250, 1540), "size": 60, "color": TEXT_COLOR},
         }
     },
     # Done!
     "total_time_cat": {
         "file": "assets/wrapped_cat/input/total_time_cat.png",
         "fields": {
-            "total_time_minutes":  {"pos": (540, 1300), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "total_time_days":    {"pos": (540, 1600), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_time_minutes":  {"pos": (440, 1270), "size": 60, "color": TEXT_COLOR},
+            "total_time_days":    {"pos": (465, 1580), "size": 60, "color": TEXT_COLOR},
         }
     },
     # Done!
     "total_pr_cat": {
         "file": "assets/wrapped_cat/input/total_pr_cat.png",
         "fields": {
-            "total_pr":  {"pos": (540, 1060), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_pr":  {"pos": (485, 1040), "size": 80, "color": TEXT_COLOR},
         }
     },
     # Done!
     "total_watts_cat": {
         "file": "assets/wrapped_cat/input/total_watts_cat.png",
         "fields": {
-            "total_kWh":  {"pos": (540, 925), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "total_house_power":    {"pos": (540, 1350), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_kWh":  {"pos": (440, 920), "size": 60, "color": TEXT_COLOR},
+            "total_house_power":    {"pos": (450, 1350), "size": 60, "color": TEXT_COLOR},
         }
     },
     # Done!
     "multi_sport_cat": {
         "file": "assets/wrapped_cat/input/multi_sport_cat.png",
         "fields": {
-            "total_sports":  {"pos": (540, 850), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "main_sport":    {"pos": (350, 1260), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "secondary_sport": {"pos": (350, 1360), "size": TEXT_SIZE, "color": TEXT_COLOR},
-            "third_sport":  {"pos": (350, 1460), "size": TEXT_SIZE, "color": TEXT_COLOR},
+            "total_sports":  {"pos": (535, 850), "size": 80, "color": TEXT_COLOR},
+            "main_sport":    {"pos": (350, 1260), "size": 60, "color": TEXT_COLOR},
+            "secondary_sport": {"pos": (350, 1360), "size": 60, "color": TEXT_COLOR},
+            "third_sport":  {"pos": (350, 1460), "size": 60, "color": TEXT_COLOR},
         }
     }
 }
@@ -122,7 +122,7 @@ FIELD_MAPPING = {
     "kudos_count":          lambda s: str(s["total_kudos"]),
     "comment_count":        lambda s: str(s["total_comments"]),
     "social_ratio":         lambda s: str(s["social_ratio"]),
-    "train_time":           lambda s: str(s["total_time_days"]),
+    "train_time":           lambda s: str(s["train_time"]),
     "total_mates":          lambda s: str(s["sports_practiced"]),
 
     # --- PRs ---
