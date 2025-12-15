@@ -1,8 +1,10 @@
 from PIL import Image, ImageDraw, ImageFont
 import os
+from pathlib import Path
+
 
 TEMPLATE_DIR = "assets/wrapped_cat/input"
-OUTPUT_DIR = "assets/wrapped_cat/output"
+STORAGE_ROOT = Path("storage")
 
 SCALE = 2  # Trying this to improve text quality
 FONT_PATH = os.path.join(
@@ -188,10 +190,19 @@ def render_template(template_name: str, stats: dict, output_path: str):
     img.save(output_path)
 
 
-def generate_wrapped_images(stats):
+def generate_wrapped_images(stats: dict, athlete_id: int):
+    output_dir = get_user_output_dir(athlete_id)
     outputs = []
+
     for template_name in TEMPLATES:
-        output = f"assets/wrapped_cat/output/{template_name}.png"
-        render_template(template_name, stats, output)
-        outputs.append(output)
+        output_path = output_dir / f"{template_name}.png"
+        render_template(template_name, stats, str(output_path))
+        outputs.append(str(output_path))
+
     return outputs
+
+
+def get_user_output_dir(athlete_id: int) -> Path:
+    base = STORAGE_ROOT / "generated" / str(athlete_id) / "wrapped"
+    base.mkdir(parents=True, exist_ok=True)
+    return base
