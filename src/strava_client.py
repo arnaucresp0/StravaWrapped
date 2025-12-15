@@ -84,14 +84,14 @@ def get_wrapped_stats():
         "total_distance_km": str(round(total_distance_km, 1)) + " Km",
         "distance_comparasion": distance_statistics(total_distance_km),
         "total_time_minutes": str(int(total_time_minutes)) + " min",
-        "total_time_days": round(total_time_days, 2),
+        "total_time_days": str(round(total_time_days, 2)) + " dies",
         "total_elevation_m": str(total_elevation) + " m",
         "everest_equivalent":everest_equivalents(total_elevation),
         "dominant_sport": dominant_sport,
         "sports_practiced": unique_sports_count,
         "sport_podium": sport_podium(sports),
         "total_energy_kwh": str(total_energy_kwh) + " kWh",
-        "house_power_days": str(round((total_energy_kwh/9), 2)) + " dies",
+        "house_power_days": str(round((total_energy_kwh/9), 1)) + " dies",
         "most_kudos_activity": {
             "name": most_kudos_activity.get("name") if most_kudos_activity else None,
             "kudos": most_kudos_activity.get("kudos_count") if most_kudos_activity else 0
