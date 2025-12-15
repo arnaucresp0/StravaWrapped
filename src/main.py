@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from datetime import datetime, timedelta, timezone
 from src.strava_client import get_wrapped_stats
 from src.image_generator import generate_wrapped_images
+from src.user_context import set_active_user
 import src.config as config  # el nostre fitxer .env carregat
 
 app = FastAPI()
@@ -49,6 +50,17 @@ async def exchange_token(code: str):
         "refresh_token": data.get("refresh_token"),
         "expires_at": data.get("expires_at")
     })
+    # Define the active user from Strava auth
+    athlete = data.get("athlete")
+    if not athlete:
+        raise RuntimeError("No athlete info returned from Strava")
+
+    athlete_id = athlete["id"]
+
+    set_active_user(
+        athlete_id=athlete_id,
+        access_token=data.get("access_token")
+    )
 
     return data
 
