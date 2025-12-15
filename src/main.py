@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 from datetime import datetime, timedelta, timezone
 from src.strava_client import get_wrapped_stats
 from src.image_generator import generate_wrapped_images
-from src.user_context import set_active_user
+from src.user_context import set_active_user, get_active_user
 import src.config as config  # el nostre fitxer .env carregat
 
 app = FastAPI()
@@ -86,9 +86,13 @@ def get_wrapped():
 
 @app.get("/wrapped/image")
 async def generate_wrapped_image_endpoint():
+    user = get_active_user()
+    athlete_id = user["athlete_id"]
+
     stats = get_wrapped_stats()
-    outputs = generate_wrapped_images(stats)
+    outputs = generate_wrapped_images(stats, athlete_id)
 
     return {
+        "athlete_id": athlete_id,
         "images": outputs
     }

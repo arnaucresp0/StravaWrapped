@@ -4,3 +4,4 @@ __pycache__/
 src/.env
 token_data.json
 assets/wrapped_cat/output/
+storage/
