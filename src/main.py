@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 import requests
@@ -18,6 +19,16 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=config.SECRET_KEY,
     session_cookie="strava_wrapped_session"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5500",  # frontend local
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Get request for the auth using http://localhost:8000/auth to authorize using strava api the tokens for the app
@@ -66,7 +77,7 @@ async def exchange_token(request: Request,code: str):
 
     request.session["athlete_id"] = athlete_id
 
-    return data
+    return RedirectResponse(url="http://localhost:5500/index.html")
 
 
 # Get request for the activities using http://localhost:8000/activities once the .env is with the proper acces_token
