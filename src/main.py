@@ -13,6 +13,9 @@ from src.auth_helper import get_current_athlete_id
 import src.config as config  # el nostre fitxer .env carregat
 import os
 
+print("ENV =", os.getenv("ENV"))
+print("STRAVA_CLIENT_ID =", config.STRAVA_CLIENT_ID)
+
 app = FastAPI()
 
 app.add_middleware(
@@ -24,8 +27,9 @@ app.add_middleware(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5500",
+        "http://localhost:5500",  # frontend local  
         "http://127.0.0.1:5500",  # frontend local
+        #config.FRONTEND_URL
     ],
     allow_credentials=True,
     allow_methods=["*"],
