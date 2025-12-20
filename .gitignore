@@ -6,3 +6,4 @@ token_data.json
 assets/wrapped_cat/output/
 storage/
 .env.production
+.env

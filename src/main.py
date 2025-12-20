@@ -13,9 +13,6 @@ from src.auth_helper import get_current_athlete_id
 import src.config as config  # el nostre fitxer .env carregat
 import os
 
-print("ENV =", os.getenv("ENV"))
-print("STRAVA_CLIENT_ID =", config.STRAVA_CLIENT_ID)
-
 app = FastAPI()
 
 app.add_middleware(
