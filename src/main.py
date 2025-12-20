@@ -18,7 +18,9 @@ app = FastAPI()
 app.add_middleware(
     SessionMiddleware,
     secret_key=config.SECRET_KEY,
-    session_cookie="strava_wrapped_session"
+    session_cookie="strava_wrapped_session",
+    same_site="none",
+    https_only=True
 )
 
 app.add_middleware(
@@ -26,7 +28,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5500",  # frontend local  
         "http://127.0.0.1:5500",  # frontend local
-        #config.FRONTEND_URL
+        config.FRONTEND_URL
     ],
     allow_credentials=True,
     allow_methods=["*"],
