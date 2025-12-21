@@ -11,7 +11,8 @@ from src.image_generator import generate_wrapped_images_base64
 from src.token_manager import get_valid_token, has_tokens
 from src.auth_helper import get_current_athlete_id
 import src.config as config  # el nostre fitxer .env carregat
-import os
+import os# Afegeix aquest middleware després de crear l'app
+from starlette.middleware.base import BaseHTTPMiddleware
 
 app = FastAPI()
 
@@ -19,8 +20,9 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=config.SECRET_KEY,
     session_cookie="strava_wrapped_session",
-    same_site="none",
-    https_only=True
+    same_site="none",  # Important per cross-site
+    https_only=True,   # Requerit amb same_site=none
+    max_age=86400,     # 24 hores en segons
 )
 
 app.add_middleware(
@@ -34,6 +36,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class MobileFixMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        # Headers específics per a Safari mòbil
+        user_agent = request.headers.get("user-agent", "").lower()
+        if "safari" in user_agent and "chrome" not in user_agent:
+            response.headers["P3P"] = 'CP="This is not a P3P policy!"'
+            response.headers["Cache-Control"] = "no-cache, private"
+        
+        return response
+
+# Registra el middleware
+app.add_middleware(MobileFixMiddleware)
 # Get request for the auth using http://localhost:8000/auth to authorize using strava api the tokens for the app
 @app.get("/auth")
 def auth():
@@ -131,89 +147,53 @@ async def generate_wrapped_image_endpoint(request: Request):
 
 @app.get("/me")
 def me(request: Request):
+    # DEBUG: Mostrar info completa
+    athlete_id = request.session.get("athlete_id")
     authenticated = request.session.get("authenticated", False)
-    tokens = has_tokens()
-
-    return {
-        "authenticated": authenticated and tokens
-    }
-
-@app.get("/test_image")
-def test_image():
-    # Crea una imatge senzilla en memòria
-    from PIL import Image, ImageDraw
-    img = Image.new('RGB', (300, 200), color='blue')
-    d = ImageDraw.Draw(img)
-    d.text((100, 100), "Test OK", fill='white')
-
-    # Converteix a Base64
-    import base64, io
-    img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format='PNG')
-    img_byte_arr.seek(0)
-    encoded_string = base64.b64encode(img_byte_arr.read()).decode('utf-8')
-
-    return {"image_base64": encoded_string}
-
-@app.get("/debug_auth")
-async def debug_auth(request: Request):
-    """Endpoint de diagnòstic COMPLET per veure tokens, sessions i dades"""
-    from src.token_manager import get_valid_token, has_tokens
-    from src.token_store import load_tokens
-    import json
     
-    # 1. Informació de sessió
-    session_info = {
-        "athlete_id": request.session.get("athlete_id"),
-        "authenticated": request.session.get("authenticated"),
+    print(f"🔍 [/me] athlete_id: {athlete_id}, authenticated: {authenticated}")
+    print(f"🔍 [/me] User-Agent: {request.headers.get('user-agent', 'No UA')}")
+    print(f"🔍 [/me] Cookies: {request.headers.get('cookie', 'No cookies')}")
+    
+    # SOLUCIÓ: No depèn de has_tokens(), només de la sessió
+    return {
+        "authenticated": authenticated,
+        "athlete_id": athlete_id,
+        "user_agent": request.headers.get('user-agent', 'unknown'),
         "session_keys": list(request.session.keys())
     }
+
+@app.get("/debug_session")
+def debug_session(request: Request):
+    """Endpoint per debug de sessió complet"""
+    import json
     
-    # 2. Informació de tokens
-    try:
-        token_data = load_tokens()
-        token_info = {
-            "has_tokens": has_tokens(),
-            "token_file_exists": bool(token_data),
-            "access_token_length": len(token_data.get("access_token", "")) if token_data else 0,
-            "refresh_token_length": len(token_data.get("refresh_token", "")) if token_data else 0,
-            "expires_at": token_data.get("expires_at") if token_data else None
-        }
-    except Exception as e:
-        token_info = {"error": str(e)}
-    
-    # 3. Prova de crida real a Strava
-    test_result = {}
-    try:
-        from src.strava_client import get_activities_for_last_year
-        start = time.time()
-        activities = get_activities_for_last_year()
-        elapsed = time.time() - start
-        
-        test_result = {
-            "activities_count": len(activities),
-            "time_seconds": round(elapsed, 2),
-            "sample_activity": activities[0] if activities else None
-        }
-    except Exception as e:
-        test_result = {"error": str(e)}
-    
-    # 4. Variables d'entorn (ocultant secrets)
-    env_vars = {
-        "STRAVA_CLIENT_ID": bool(os.getenv("STRAVA_CLIENT_ID")),
-        "STRAVA_CLIENT_SECRET": bool(os.getenv("STRAVA_CLIENT_SECRET")),
-        "STRAVA_REDIRECT_URI": os.getenv("STRAVA_REDIRECT_URI"),
-        "FRONTEND_URL": os.getenv("FRONTEND_URL"),
-        "ENV": os.getenv("ENV"),
-        "RENDER": os.getenv("RENDER")
+    info = {
+        "session": dict(request.session),
+        "headers": {
+            "user_agent": request.headers.get("user-agent"),
+            "cookie": request.headers.get("cookie"),
+            "origin": request.headers.get("origin"),
+            "referer": request.headers.get("referer"),
+        },
+        "is_mobile": any(x in request.headers.get("user-agent", "").lower() 
+                        for x in ['mobile', 'android', 'iphone', 'ipad']),
+        "timestamp": datetime.now().isoformat()
     }
     
+    print(f"📱 [SESSION DEBUG] {json.dumps(info, indent=2)}")
+    return info
+
+@app.get("/debug_cookies")
+def debug_cookies(request: Request):
+    """Mostra les cookies rebudes"""
+    cookies = request.headers.get("cookie", "No cookies")
+    print(f"🍪 [COOKIES] {cookies}")
+    
     return {
-        "timestamp": datetime.now().isoformat(),
-        "session": session_info,
-        "tokens": token_info,
-        "strava_test": test_result,
-        "environment": env_vars
+        "cookies_received": cookies,
+        "set_cookie_header": request.headers.get("set-cookie", "None"),
+        "user_agent": request.headers.get("user-agent")
     }
 
 def get_user_wrapped_image_path(athlete_id: int, image_name: str) -> str:
