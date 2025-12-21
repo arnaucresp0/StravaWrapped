@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 import requests
-import datetime
+from datetime import datetime
 from urllib.parse import urlencode
 from src.strava_client import get_wrapped_stats
 from src.image_generator import generate_wrapped_images_in_memory
