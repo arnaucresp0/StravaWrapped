@@ -2,7 +2,6 @@ venv/
 __pycache__/
 *.pyc
 src/.env
-token_data.json
 assets/wrapped_cat/output/
 storage/
 .env.production
