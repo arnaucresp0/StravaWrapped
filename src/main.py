@@ -76,6 +76,7 @@ async def exchange_token(request: Request,code: str):
     athlete_id = athlete["id"]
 
     request.session["athlete_id"] = athlete_id
+    request.session["authenticated"] = True
 
     return RedirectResponse(url=config.FRONTEND_URL)
 
