@@ -8,55 +8,26 @@ from src.token_manager import get_valid_token
 BASE_URL = "https://www.strava.com/api/v3"
 
 def get_activities_for_last_year():
-    """VERSIÓ AMB LOGS DETALLATS"""
-    print(f"🔍 [DEBUG] Iniciant get_activities_for_last_year()")
-    
-    try:
-        access_token = get_valid_token()
-        print(f"🔍 [DEBUG] Token obtingut: {access_token[:20]}..." if access_token else "🔍 [DEBUG] Token: None")
-    except Exception as e:
-        print(f"🚨 [DEBUG] Error obtenint token: {e}")
-        return []
-    
+    """
+    Versió OPTIMITZADA: Només obté activitats de l'últim any
+    i fa peticions en paral·lel quan calen múltiples pàgines.
+    """
+    access_token = get_valid_token()
     headers = {"Authorization": f"Bearer {access_token}"}
     
-    # Prova amb 12 mesos (no 6)
+    # 1. Filtrar DIRECTAMENT a l'API de Strava
     one_year_ago = int((datetime.now(timezone.utc) - timedelta(days=365)).timestamp())
     
-    url = f"{BASE_URL}/athlete/activities?page=1&per_page=100&after={one_year_ago}"
-    print(f"🔍 [DEBUG] URL crida: {url}")
+    # 2. Primer, prova una pàgina per veure quantes n'hi ha
+    test_url = f"{BASE_URL}/athlete/activities?page=1&per_page=1&after={one_year_ago}"
+    test_resp = requests.get(test_url, headers=headers, timeout=10)
     
-    try:
-        import time as ttime
-        start = ttime.time()
-        
-        response = requests.get(url, headers=headers, timeout=30)
-        elapsed = ttime.time() - start
-        
-        print(f"🔍 [DEBUG] Strava API respon en {elapsed:.1f}s - Status: {response.status_code}")
-        
-        if response.status_code != 200:
-            print(f"🚨 [DEBUG] Error HTTP {response.status_code}: {response.text[:200]}")
-            return []
-        
-        activities = response.json()
-        
-        if not isinstance(activities, list):
-            print(f"🚨 [DEBUG] Resposta no és llista: {type(activities)}")
-            return []
-        
-        print(f"✅ [DEBUG] Obtingudes {len(activities)} activitats")
-        if activities:
-            print(f"📊 [DEBUG] Primera activitat: {activities[0].get('name', 'No name')} - {activities[0].get('start_date')}")
-        
-        return activities
-        
-    except requests.exceptions.Timeout:
-        print("⏰ [DEBUG] TIMEOUT esperant Strava API")
+    # Si no hi ha activitats
+    if not test_resp.json():
         return []
-    except Exception as e:
-        print(f"🚨 [DEBUG] Error inesperat: {e}")
-        return []
+    
+    # 3. Estimar quantes pàgines necessitem (màxim 5 = 1,000 activitats)
+    activities = []
     
     # Funció per obtenir una pàgina
     def fetch_page(page):
