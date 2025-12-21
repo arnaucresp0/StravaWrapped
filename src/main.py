@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 import requests
+import datetime
 from urllib.parse import urlencode
 from src.strava_client import get_wrapped_stats
 from src.image_generator import generate_wrapped_images_in_memory
@@ -153,6 +154,29 @@ def test_image():
     encoded_string = base64.b64encode(img_byte_arr.read()).decode('utf-8')
 
     return {"image_base64": encoded_string}
+
+@app.get("/test_timing")
+async def test_timing(request: Request):
+    """Endpoint de diagnòstic - mostra temps reals"""
+    import time
+    start = time.time()
+    
+    # Prova de càrrega de dades
+    test_start = time.time()
+    from src.strava_client import get_activities_for_last_year
+    activities = get_activities_for_last_year()
+    test_time = time.time() - test_start
+    
+    return {
+        "status": "ok",
+        "activities_count": len(activities),
+        "time_get_activities": f"{test_time:.1f}s",
+        "total_time": f"{time.time() - start:.1f}s",
+        "timestamp": datetime.now().isoformat(),
+        "debug": {
+            "scale": "1"  # Verificar que SCALE=1 a producció
+        }
+    }
 
 def get_user_wrapped_image_path(athlete_id: int, image_name: str) -> str:
     base_dir = os.path.join(
