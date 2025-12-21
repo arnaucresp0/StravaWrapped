@@ -26,6 +26,7 @@ app.add_middleware(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://strava-wrapped-cat.netlify.app",
         config.FRONTEND_URL
     ],
     allow_credentials=True,
@@ -110,18 +111,21 @@ async def generate_wrapped_image_endpoint(request: Request):
     
     images_base64 = []
     for img_pil in images_pil:
-        # Convertir la imatge PIL a bytes en memòria
+        # Processa una imatge a la vegada
         img_byte_arr = io.BytesIO()
-        img_pil.save(img_byte_arr, format='PNG')
-        img_byte_arr.seek(0)  # Tornar al principi del buffer
+        img_pil.save(img_byte_arr, format='PNG', optimize=True)  # Afegeix optimize
+        img_byte_arr.seek(0)
         
-        # Codificar a Base64
         encoded_string = base64.b64encode(img_byte_arr.read()).decode('utf-8')
         images_base64.append(encoded_string)
+        
+        # Allibera memòria explícitament
+        img_pil.close()  # Tanca la imatge PIL
+        del img_byte_arr  # Elimina el buffer
     
     return {
         "athlete_id": athlete_id,
-        "images": images_base64  # Retorna les imatges en Base64
+        "images": images_base64
     }
 
 @app.get("/me")

@@ -6,7 +6,7 @@ from pathlib import Path
 TEMPLATE_DIR = "assets/wrapped_cat/input"
 STORAGE_ROOT = Path("storage")
 
-SCALE = 3  # Trying this to improve text quality
+SCALE = 1  # Trying this to improve text quality
 FONT_PATH = os.path.join(
     "assets", "fonts", "Montserrat_Arabic_Regular", "Montserrat_Arabic_Regular.ttf"
 )
