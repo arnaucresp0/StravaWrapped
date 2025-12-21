@@ -284,7 +284,7 @@ def generate_wrapped_images_base64(stats: dict, athlete_id: int):
         
         # Guardar com JPEG
         img_byte_arr = io.BytesIO()
-        img.save(img_byte_arr, format='JPEG', quality=75, optimize=True)
+        img.save(img_byte_arr, format='JPEG', quality=85, optimize=True)
         img_byte_arr.seek(0)
         
         # 3. Convertir a Base64
