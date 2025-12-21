@@ -37,3 +37,16 @@ def get_valid_token():
     })
 
     return new_tokens.get("access_token")
+
+def has_tokens():
+    tokens = load_tokens()
+
+    if not tokens:
+        return False
+
+    access_token = tokens.get("access_token")
+    refresh_token = tokens.get("refresh_token")
+
+    return bool(access_token and refresh_token)
+
+

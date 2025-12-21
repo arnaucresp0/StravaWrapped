@@ -1,14 +1,12 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 import requests
 from urllib.parse import urlencode
-from datetime import datetime, timedelta, timezone
 from src.strava_client import get_wrapped_stats
 from src.image_generator import generate_wrapped_images
-from src.user_context import set_active_user, get_active_user
-from src.token_manager import get_valid_token
+from src.token_manager import get_valid_token, has_tokens
 from src.auth_helper import get_current_athlete_id
 import src.config as config  # el nostre fitxer .env carregat
 import os
@@ -126,15 +124,14 @@ def get_wrapped_image(request: Request, image_name: str):
 
 @app.get("/me")
 def me(request: Request):
-    athlete_id = request.session.get("athlete_id")
-
-    if not athlete_id:
-        return {"authenticated": False}
+    authenticated = request.session.get("authenticated", False)
+    tokens = has_tokens()
 
     return {
-        "authenticated": True,
-        "athlete_id": athlete_id
+        "authenticated": authenticated and tokens
     }
+
+
 
 def get_user_wrapped_image_path(athlete_id: int, image_name: str) -> str:
     base_dir = os.path.join(
