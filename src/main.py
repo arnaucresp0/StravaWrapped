@@ -4,6 +4,7 @@ from fastapi.responses import RedirectResponse, FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 import requests
 from datetime import datetime
+import time
 from urllib.parse import urlencode
 from src.strava_client import get_wrapped_stats
 from src.image_generator import generate_wrapped_images_in_memory
@@ -155,27 +156,65 @@ def test_image():
 
     return {"image_base64": encoded_string}
 
-@app.get("/test_timing")
-async def test_timing(request: Request):
-    """Endpoint de diagnòstic - mostra temps reals"""
-    import time
-    start = time.time()
+@app.get("/debug_auth")
+async def debug_auth(request: Request):
+    """Endpoint de diagnòstic COMPLET per veure tokens, sessions i dades"""
+    from src.token_manager import get_valid_token, has_tokens
+    from src.token_store import load_tokens
+    import json
     
-    # Prova de càrrega de dades
-    test_start = time.time()
-    from src.strava_client import get_activities_for_last_year
-    activities = get_activities_for_last_year()
-    test_time = time.time() - test_start
+    # 1. Informació de sessió
+    session_info = {
+        "athlete_id": request.session.get("athlete_id"),
+        "authenticated": request.session.get("authenticated"),
+        "session_keys": list(request.session.keys())
+    }
+    
+    # 2. Informació de tokens
+    try:
+        token_data = load_tokens()
+        token_info = {
+            "has_tokens": has_tokens(),
+            "token_file_exists": bool(token_data),
+            "access_token_length": len(token_data.get("access_token", "")) if token_data else 0,
+            "refresh_token_length": len(token_data.get("refresh_token", "")) if token_data else 0,
+            "expires_at": token_data.get("expires_at") if token_data else None
+        }
+    except Exception as e:
+        token_info = {"error": str(e)}
+    
+    # 3. Prova de crida real a Strava
+    test_result = {}
+    try:
+        from src.strava_client import get_activities_for_last_year
+        start = time.time()
+        activities = get_activities_for_last_year()
+        elapsed = time.time() - start
+        
+        test_result = {
+            "activities_count": len(activities),
+            "time_seconds": round(elapsed, 2),
+            "sample_activity": activities[0] if activities else None
+        }
+    except Exception as e:
+        test_result = {"error": str(e)}
+    
+    # 4. Variables d'entorn (ocultant secrets)
+    env_vars = {
+        "STRAVA_CLIENT_ID": bool(os.getenv("STRAVA_CLIENT_ID")),
+        "STRAVA_CLIENT_SECRET": bool(os.getenv("STRAVA_CLIENT_SECRET")),
+        "STRAVA_REDIRECT_URI": os.getenv("STRAVA_REDIRECT_URI"),
+        "FRONTEND_URL": os.getenv("FRONTEND_URL"),
+        "ENV": os.getenv("ENV"),
+        "RENDER": os.getenv("RENDER")
+    }
     
     return {
-        "status": "ok",
-        "activities_count": len(activities),
-        "time_get_activities": f"{test_time:.1f}s",
-        "total_time": f"{time.time() - start:.1f}s",
         "timestamp": datetime.now().isoformat(),
-        "debug": {
-            "scale": "1"  # Verificar que SCALE=1 a producció
-        }
+        "session": session_info,
+        "tokens": token_info,
+        "strava_test": test_result,
+        "environment": env_vars
     }
 
 def get_user_wrapped_image_path(athlete_id: int, image_name: str) -> str:
