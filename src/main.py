@@ -106,24 +106,46 @@ def get_wrapped():
 
 @app.get("/wrapped/image")
 async def generate_wrapped_image_endpoint(request: Request):
+    import time
+    start_total = time.time()
+    
     athlete_id = get_current_athlete_id(request)
+    print(f"⏱️  [TIMING] START /wrapped/image per athlete {athlete_id}")
+    
+    # 1. Estadístiques
+    start_stats = time.time()
+    print(f"📊 [TIMING] Cridant get_wrapped_stats()...")
     stats = get_wrapped_stats()
+    stats_time = time.time() - start_stats
+    print(f"✅ [TIMING] Stats calculades en {stats_time:.1f}s")
+    print(f"   📈 Activitats: {stats.get('activities_last_year', 'N/A')}")
     
+    # 2. Imatges
+    start_images = time.time()
+    print(f"🖼️  [TIMING] Generant imatges...")
     images_pil = generate_wrapped_images_in_memory(stats, athlete_id)
+    images_time = time.time() - start_images
+    print(f"✅ [TIMING] {len(images_pil)} imatges generades en {images_time:.1f}s")
     
+    # 3. Base64
+    start_base64 = time.time()
     images_base64 = []
-    for img_pil in images_pil:
-        # Processa una imatge a la vegada
+    for i, img_pil in enumerate(images_pil):
+        img_start = time.time()
         img_byte_arr = io.BytesIO()
-        img_pil.save(img_byte_arr, format='PNG', optimize=True)  # Afegeix optimize
+        img_pil.save(img_byte_arr, format='PNG', optimize=True)
         img_byte_arr.seek(0)
-        
         encoded_string = base64.b64encode(img_byte_arr.read()).decode('utf-8')
         images_base64.append(encoded_string)
-        
-        # Allibera memòria explícitament
-        img_pil.close()  # Tanca la imatge PIL
-        del img_byte_arr  # Elimina el buffer
+        img_pil.close()
+        img_elapsed = time.time() - img_start
+        print(f"   🖼️  [TIMING] Imatge {i+1}: {img_elapsed:.1f}s")
+    
+    base64_time = time.time() - start_base64
+    print(f"✅ [TIMING] Tot Base64 en {base64_time:.1f}s")
+    
+    total_time = time.time() - start_total
+    print(f"🎯 [TIMING] COMPLETAT en {total_time:.1f}s ({total_time/60:.1f}min)")
     
     return {
         "athlete_id": athlete_id,

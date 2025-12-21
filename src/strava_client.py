@@ -8,50 +8,53 @@ from src.token_manager import get_valid_token
 BASE_URL = "https://www.strava.com/api/v3"
 
 def get_activities_for_last_year():
-    """
-    Versió OPTIMITZADA: Només obté activitats de l'últim any
-    i fa peticions en paral·lel quan calen múltiples pàgines.
-    """
-    access_token = get_valid_token()
-    headers = {"Authorization": f"Bearer {access_token}"}
+    """VERSIÓ SIMPLIFICADA: 1 sola petició, sense paral·lelització innecessària"""
+    print(f"🔍 [DEBUG] Iniciant get_activities_for_last_year()")
     
-    # 1. Filtrar DIRECTAMENT a l'API de Strava
-    one_year_ago = int((datetime.now(timezone.utc) - timedelta(days=365)).timestamp())
-    
-    # 2. Primer, prova una pàgina per veure quantes n'hi ha
-    test_url = f"{BASE_URL}/athlete/activities?page=1&per_page=1&after={one_year_ago}"
-    test_resp = requests.get(test_url, headers=headers, timeout=10)
-    
-    # Si no hi ha activitats
-    if not test_resp.json():
+    try:
+        access_token = get_valid_token()
+        if not access_token:
+            print("🚨 [DEBUG] Token buit")
+            return []
+    except Exception as e:
+        print(f"🚨 [DEBUG] Error obtenint token: {e}")
         return []
     
-    # 3. Estimar quantes pàgines necessitem (màxim 5 = 1,000 activitats)
-    activities = []
+    headers = {"Authorization": f"Bearer {access_token}"}
     
-    # Funció per obtenir una pàgina
-    def fetch_page(page):
-        url = f"{BASE_URL}/athlete/activities?page={page}&per_page=200&after={one_year_ago}"
-        resp = requests.get(url, headers=headers, timeout=10)
-        return resp.json() if resp.status_code == 200 else []
+    # Últim any
+    one_year_ago = int((datetime.now(timezone.utc) - timedelta(days=365)).timestamp())
     
-    # 4. Obtenir pàgines en PARAL·LEL (màxim 3 pàgines alhora)
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        # Prova amb 3 pàgines inicialment (600 activitats)
-        futures = {executor.submit(fetch_page, page): page for page in range(1, 4)}
+    # 1 SOLA PETICIÓ amb per_page=200 (més que suficient per 135 activitats)
+    url = f"{BASE_URL}/athlete/activities?page=1&per_page=200&after={one_year_ago}"
+    print(f"🔍 [DEBUG] URL: {url}")
+    
+    try:
+        import time
+        start = time.time()
+        response = requests.get(url, headers=headers, timeout=15)
+        elapsed = time.time() - start
         
-        for future in as_completed(futures):
-            page_data = future.result()
-            if isinstance(page_data, list) and page_data:
-                activities.extend(page_data)
-                # Si la pàgina té menys de 200, no hi ha més pàgines
-                if len(page_data) < 200:
-                    # Cancel·lar les altres pàgines si n'hi ha
-                    for f in list(futures.keys()):
-                        if f != future and not f.done():
-                            f.cancel()
-    
-    return activities
+        print(f"📡 [DEBUG] Strava API respon en {elapsed:.1f}s - Status: {response.status_code}")
+        
+        if response.status_code != 200:
+            print(f"🚨 [DEBUG] Error {response.status_code}: {response.text[:200]}")
+            return []
+        
+        activities = response.json()
+        if not isinstance(activities, list):
+            print(f"🚨 [DEBUG] Resposta no és llista: {type(activities)}")
+            return []
+        
+        print(f"✅ [DEBUG] Obtingudes {len(activities)} activitats")
+        return activities
+        
+    except requests.exceptions.Timeout:
+        print("⏰ [DEBUG] TIMEOUT")
+        return []
+    except Exception as e:
+        print(f"🚨 [DEBUG] Error: {e}")
+        return []
 
 def get_wrapped_stats():
     """
