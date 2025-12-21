@@ -10,6 +10,8 @@ from src.token_manager import get_valid_token, has_tokens
 from src.auth_helper import get_current_athlete_id
 import src.config as config  # el nostre fitxer .env carregat
 import os
+import base64
+import io
 
 app = FastAPI()
 
@@ -102,26 +104,52 @@ def get_wrapped():
 @app.get("/wrapped/image")
 async def generate_wrapped_image_endpoint(request: Request):
     athlete_id = get_current_athlete_id(request)
-
     stats = get_wrapped_stats()
-    outputs = generate_wrapped_images(stats, athlete_id)
+
+    # 1. Genera les imatges (ASSUMTE: això retorna una llista d'objectes PIL.Image)
+    #    Si la teva funció actual guarda a disc, hauràs de modificar-la també.
+    images_pil = generate_wrapped_images(stats, athlete_id)
+
+    images_base64 = []
+    for img_pil in images_pil:
+        # 2. Converteix la imatge a bytes en memòria
+        img_byte_arr = io.BytesIO()
+        img_pil.save(img_byte_arr, format='PNG')
+        img_byte_arr.seek(0)
+
+        # 3. Codifica els bytes a Base64
+        encoded_string = base64.b64encode(img_byte_arr.read()).decode('utf-8')
+        images_base64.append(encoded_string)
 
     return {
         "athlete_id": athlete_id,
-        "images": outputs
+        "images": images_base64  # Retorna les cadenes Base64
     }
 
-@app.get("/wrapped/image/{image_name}")
-def get_wrapped_image(request: Request, image_name: str):
+@app.get("/wrapped/image")
+async def generate_wrapped_image_endpoint(request: Request):
     athlete_id = get_current_athlete_id(request)
-
-    image_path = get_user_wrapped_image_path(athlete_id, image_name)
-
-    return FileResponse(
-        image_path,
-        media_type="image/png",
-        filename=image_name
-    )
+    stats = get_wrapped_stats()
+    
+    # Ús de la nova funció que retorna objectes PIL.Image
+    from src.image_generator import generate_wrapped_images_in_memory
+    images_pil = generate_wrapped_images_in_memory(stats, athlete_id)
+    
+    images_base64 = []
+    for img_pil in images_pil:
+        # Convertir la imatge PIL a bytes en memòria
+        img_byte_arr = io.BytesIO()
+        img_pil.save(img_byte_arr, format='PNG')
+        img_byte_arr.seek(0)  # Tornar al principi del buffer
+        
+        # Codificar a Base64
+        encoded_string = base64.b64encode(img_byte_arr.read()).decode('utf-8')
+        images_base64.append(encoded_string)
+    
+    return {
+        "athlete_id": athlete_id,
+        "images": images_base64  # Retorna les imatges en Base64
+    }
 
 @app.get("/me")
 def me(request: Request):
@@ -131,6 +159,23 @@ def me(request: Request):
     return {
         "authenticated": authenticated and tokens
     }
+
+@app.get("/test_image")
+def test_image():
+    # Crea una imatge senzilla en memòria
+    from PIL import Image, ImageDraw
+    img = Image.new('RGB', (300, 200), color='blue')
+    d = ImageDraw.Draw(img)
+    d.text((100, 100), "Test OK", fill='white')
+
+    # Converteix a Base64
+    import base64, io
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    img_byte_arr.seek(0)
+    encoded_string = base64.b64encode(img_byte_arr.read()).decode('utf-8')
+
+    return {"image_base64": encoded_string}
 
 
 
@@ -149,3 +194,4 @@ def get_user_wrapped_image_path(athlete_id: int, image_name: str) -> str:
         raise FileNotFoundError("Image not found")
 
     return image_path
+

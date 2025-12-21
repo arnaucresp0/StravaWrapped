@@ -190,15 +190,13 @@ def render_template(template_name: str, stats: dict, output_path: str):
     img.save(output_path)
 
 
-def generate_wrapped_images(stats: dict, athlete_id: int):
+def generate_wrapped_images_to_disk(stats: dict, athlete_id: int):  # Nom canviat
     output_dir = get_user_output_dir(athlete_id)
     outputs = []
-
     for template_name in TEMPLATES:
         output_path = output_dir / f"{template_name}.png"
         render_template(template_name, stats, str(output_path))
         outputs.append(str(output_path))
-
     return outputs
 
 
@@ -206,3 +204,34 @@ def get_user_output_dir(athlete_id: int) -> Path:
     base = STORAGE_ROOT / "generated" / str(athlete_id) / "wrapped"
     base.mkdir(parents=True, exist_ok=True)
     return base
+
+def generate_wrapped_images_in_memory(stats: dict, athlete_id: int):
+    """Genera les imatges del Wrapped i les retorna com a llista d'objectes PIL.Image."""
+    images_pil = []
+    
+    for template_name in TEMPLATES:
+        template = TEMPLATES[template_name]
+        # Obrir la plantilla (imatge de fons)
+        img = Image.open(template["file"]).convert("RGBA")
+
+        if SCALE != 1:
+            img = img.resize(
+                (img.width * SCALE, img.height * SCALE),
+                Image.Resampling.LANCZOS
+            )
+
+        draw = ImageDraw.Draw(img)
+
+        for field, cfg in template["fields"].items():
+            text = resolve_field(field, stats)
+            if not text:
+                continue
+
+            font = load_font(cfg["size"] * SCALE)
+            scaled_pos = (cfg["pos"][0] * SCALE, cfg["pos"][1] * SCALE)
+            draw.text(scaled_pos, text, fill=cfg["color"], font=font)
+
+        # Afegir l'objecte d'imatge a la llista (NO guardar a disc)
+        images_pil.append(img)
+    
+    return images_pil
