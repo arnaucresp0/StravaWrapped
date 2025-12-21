@@ -7,14 +7,11 @@ from datetime import datetime
 import time
 from urllib.parse import urlencode
 from src.strava_client import get_wrapped_stats
-from src.image_generator import generate_wrapped_images_in_memory
+from src.image_generator import generate_wrapped_images_base64
 from src.token_manager import get_valid_token, has_tokens
 from src.auth_helper import get_current_athlete_id
 import src.config as config  # el nostre fitxer .env carregat
 import os
-import base64
-import io
-from PIL import Image
 
 app = FastAPI()
 
@@ -113,71 +110,19 @@ async def generate_wrapped_image_endpoint(request: Request):
     athlete_id = get_current_athlete_id(request)
     print(f"⏱️  [TIMING] START /wrapped/image per athlete {athlete_id}")
     
-    # 1. Estadístiques (deixa-ho igual)
+    # 1. Estadístiques
     start_stats = time.time()
-    print(f"📊 [TIMING] Cridant get_wrapped_stats()...")
     stats = get_wrapped_stats()
     stats_time = time.time() - start_stats
-    print(f"✅ [TIMING] Stats calculades en {stats_time:.1f}s")
-    print(f"   📈 Activitats: {stats.get('activities_last_year', 'N/A')}")
+    print(f"✅ [TIMING] Stats en {stats_time:.1f}s - {stats.get('activities_last_year', 'N/A')}")
     
-    # 2. Imatges (deixa-ho igual)
+    # 2. Imatges en Base64 directament (nova funció)
     start_images = time.time()
-    print(f"🖼️  [TIMING] Generant imatges...")
-    images_pil = generate_wrapped_images_in_memory(stats, athlete_id)
+    images_base64 = generate_wrapped_images_base64(stats, athlete_id)
     images_time = time.time() - start_images
-    print(f"✅ [TIMING] {len(images_pil)} imatges generades en {images_time:.1f}s")
-    
-    # 3. ⭐⭐⭐ CANVI CLAU AQUÍ ⭐⭐⭐ - Conversió a JPEG + Base64
-    start_base64 = time.time()
-    images_base64 = []
-    
-    for i, img_pil in enumerate(images_pil):
-        img_start = time.time()
-        img_byte_arr = io.BytesIO()
-        
-        # A. Convertir de PNG a JPEG (molt més petit)
-        # Comprova si la imatge té transparència (canal alfa)
-        if img_pil.mode in ('RGBA', 'LA', 'P'):
-            # Si té transparència, posa fons blanc
-            bg = Image.new('RGB', img_pil.size, (255, 255, 255))  # Fons blanc
-            # Pega la imatge original sobre el fons
-            if img_pil.mode == 'RGBA':
-                bg.paste(img_pil, mask=img_pil.split()[-1])  # Ús del canal alfa com a màscara
-            else:
-                bg.paste(img_pil)
-            img_pil = bg
-        
-        # B. Guardar com JPEG (75% qualitat, equilibri entre qualitat i mida)
-        img_pil.save(img_byte_arr, format='JPEG', quality=75, optimize=True)
-        img_byte_arr.seek(0)  # Tornar al principi del buffer
-        
-        # C. Llegir bytes i mesurar-ne la mida
-        file_bytes = img_byte_arr.read()
-        file_size_kb = len(file_bytes) // 1024  # Convertir a KB
-        print(f"   📏 Imatge {i+1}: {file_size_kb}KB (JPEG)")
-        
-        # D. Convertir a Base64 (ara serà molt més ràpid perquè el JPEG és petit)
-        encoded_string = base64.b64encode(file_bytes).decode('utf-8')
-        images_base64.append(encoded_string)
-        
-        # E. Alliberar memòria
-        img_pil.close()
-        
-        img_elapsed = time.time() - img_start
-        print(f"   🖼️  [TIMING JPEG] Imatge {i+1}: {img_elapsed:.1f}s")
-        
-        # Netejar memòria explícitament
-        del img_byte_arr
-        del file_bytes
-        import gc
-        gc.collect()  # Forçar recol·lecció de brossa
-    
-    base64_time = time.time() - start_base64
-    print(f"✅ [TIMING] Tot JPEG+Base64 en {base64_time:.1f}s")
     
     total_time = time.time() - start_total
-    print(f"🎯 [TIMING] COMPLETAT en {total_time:.1f}s ({total_time/60:.1f}min)")
+    print(f"🎯 [TIMING] COMPLET en {total_time:.1f}s")
     
     return {
         "athlete_id": athlete_id,

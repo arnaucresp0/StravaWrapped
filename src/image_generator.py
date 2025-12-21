@@ -1,6 +1,9 @@
 from PIL import Image, ImageDraw, ImageFont
 import os
 from pathlib import Path
+import time
+import base64
+import io
 
 
 TEMPLATE_DIR = "assets/wrapped_cat/input"
@@ -235,3 +238,69 @@ def generate_wrapped_images_in_memory(stats: dict, athlete_id: int):
         images_pil.append(img)
     
     return images_pil
+
+def generate_wrapped_images_base64(stats: dict, athlete_id: int):
+    """
+    Genera les imatges del Wrapped i les retorna com a llista de cadenes Base64 (JPEG).
+    """
+    start_total = time.time()
+    images_base64 = []
+    
+    print(f"🖼️  [IMAGE_GEN] Iniciant generació per athlete {athlete_id}")
+    
+    for i, template_name in enumerate(TEMPLATES.keys()):
+        img_start = time.time()
+        template = TEMPLATES[template_name]
+        
+        # 1. Obrir plantilla i renderitzar text
+        img = Image.open(template["file"]).convert("RGBA")
+        
+        if SCALE != 1:
+            img = img.resize(
+                (img.width * SCALE, img.height * SCALE),
+                Image.Resampling.LANCZOS
+            )
+
+        draw = ImageDraw.Draw(img)
+
+        for field, cfg in template["fields"].items():
+            text = resolve_field(field, stats)
+            if not text:
+                continue
+
+            font = load_font(cfg["size"] * SCALE)
+            scaled_pos = (cfg["pos"][0] * SCALE, cfg["pos"][1] * SCALE)
+            draw.text(scaled_pos, text, fill=cfg["color"], font=font)
+        
+        # 2. Convertir a JPEG (més eficient que PNG)
+        if img.mode in ('RGBA', 'LA', 'P'):
+            # Si té transparència, posar fons blanc
+            bg = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'RGBA':
+                bg.paste(img, mask=img.split()[-1])
+            else:
+                bg.paste(img)
+            img = bg
+        
+        # Guardar com JPEG
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='JPEG', quality=75, optimize=True)
+        img_byte_arr.seek(0)
+        
+        # 3. Convertir a Base64
+        file_bytes = img_byte_arr.read()
+        file_size_kb = len(file_bytes) // 1024
+        
+        encoded_string = base64.b64encode(file_bytes).decode('utf-8')
+        images_base64.append(encoded_string)
+        
+        # 4. Alliberar memòria
+        img.close()
+        
+        img_elapsed = time.time() - img_start
+        print(f"   🖼️  [IMAGE_GEN] {template_name}: {file_size_kb}KB en {img_elapsed:.1f}s")
+    
+    total_time = time.time() - start_total
+    print(f"✅ [IMAGE_GEN] {len(images_base64)} imatges generades en {total_time:.1f}s")
+    
+    return images_base64
