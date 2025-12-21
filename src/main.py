@@ -77,7 +77,7 @@ async def exchange_token(request: Request,code: str):
 
     request.session["athlete_id"] = athlete_id
 
-    return RedirectResponse(url="http://localhost:5500/index.html")
+    return RedirectResponse(url=config.FRONTEND_URL)
 
 
 # Get request for the activities using http://localhost:8000/activities once the .env is with the proper acces_token
