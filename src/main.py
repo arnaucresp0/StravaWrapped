@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, FileResponse
 from starlette.middleware.sessions import SessionMiddleware
@@ -10,9 +10,15 @@ from src.strava_client import get_wrapped_stats
 from src.image_generator import generate_wrapped_images_base64
 from src.token_manager import get_valid_token, has_tokens
 from src.auth_helper import get_current_athlete_id
-import src.config as config  # el nostre fitxer .env carregat
-import os# Afegeix aquest middleware després de crear l'app
+import src.config as config  
+import os
 from starlette.middleware.base import BaseHTTPMiddleware
+import secrets
+import json
+from typing import Dict
+
+SESSION_TOKENS: Dict[str, Dict] = {}  # {token: {"athlete_id": 123, "created_at": ...}}
+TOKEN_EXPIRY_HOURS = 24
 
 app = FastAPI()
 
@@ -97,6 +103,24 @@ async def exchange_token(request: Request,code: str):
     request.session["athlete_id"] = athlete_id
     request.session["authenticated"] = True
 
+     # Genera un token de sessió segur
+    session_token = secrets.token_urlsafe(32)
+    
+    # Guarda el token en memòria (associat amb athlete_id)
+    SESSION_TOKENS[session_token] = {
+        "athlete_id": athlete_id,
+        "created_at": datetime.now().isoformat()
+    }
+    
+    # Neteja tokens antics (opcional)
+    cleanup_old_tokens()
+    
+    print(f"✅ [AUTH] Token creat: {session_token[:10]}... per athlete {athlete_id}")
+    
+    # Redirigeix al frontend amb el token com a paràmetre
+    frontend_url = f"{config.FRONTEND_URL}?token={session_token}"
+    return RedirectResponse(url=frontend_url)
+
     return RedirectResponse(url=config.FRONTEND_URL)
 
 
@@ -163,52 +187,70 @@ def me(request: Request):
         "session_keys": list(request.session.keys())
     }
 
-@app.get("/debug_session")
-def debug_session(request: Request):
-    """Endpoint per debug de sessió complet"""
-    import json
+@app.get("/me_token")
+def me_token(request: Request):
+    """
+    Endpoint /me que accepta token via header O cookie
+    Compatible amb tots els navegadors
+    """
+    # Opció A: Token via header (per a Safari mòbil)
+    token = request.headers.get("x-session-token")
+    if token and token in SESSION_TOKENS:
+        athlete_data = SESSION_TOKENS[token]
+        return {
+            "authenticated": True,
+            "athlete_id": athlete_data["athlete_id"],
+            "auth_method": "token_header"
+        }
     
-    info = {
-        "session": dict(request.session),
-        "headers": {
-            "user_agent": request.headers.get("user-agent"),
-            "cookie": request.headers.get("cookie"),
-            "origin": request.headers.get("origin"),
-            "referer": request.headers.get("referer"),
-        },
-        "is_mobile": any(x in request.headers.get("user-agent", "").lower() 
-                        for x in ['mobile', 'android', 'iphone', 'ipad']),
-        "timestamp": datetime.now().isoformat()
-    }
+    # Opció B: Token via query param (per a redirecció inicial)
+    token_param = request.query_params.get("token")
+    if token_param and token_param in SESSION_TOKENS:
+        athlete_data = SESSION_TOKENS[token_param]
+        return {
+            "authenticated": True,
+            "athlete_id": athlete_data["athlete_id"],
+            "auth_method": "token_param"
+        }
     
-    print(f"📱 [SESSION DEBUG] {json.dumps(info, indent=2)}")
-    return info
-
-@app.get("/debug_cookies")
-def debug_cookies(request: Request):
-    """Mostra les cookies rebudes"""
-    cookies = request.headers.get("cookie", "No cookies")
-    print(f"🍪 [COOKIES] {cookies}")
+    # Opció C: Cookies (per a navegadors que les suportin)
+    athlete_id = request.session.get("athlete_id")
+    if athlete_id:
+        return {
+            "authenticated": True,
+            "athlete_id": athlete_id,
+            "auth_method": "cookie"
+        }
     
+    # Si cap mètode funciona
+    print(f"🔍 [/me_token] No autenticat. Token header: {bool(token)}, Token param: {bool(token_param)}, Session: {request.session.get('athlete_id')}")
     return {
-        "cookies_received": cookies,
-        "set_cookie_header": request.headers.get("set-cookie", "None"),
-        "user_agent": request.headers.get("user-agent")
+        "authenticated": False,
+        "auth_method": "none"
     }
 
-def get_user_wrapped_image_path(athlete_id: int, image_name: str) -> str:
-    base_dir = os.path.join(
-        "storage",
-        "generated",
-        str(athlete_id),
-        "wrapped"
-    )
+@app.get("/debug_tokens")
+def debug_tokens():
+    """Endpoint de debug per veure tokens actius"""
+    return {
+        "total_tokens": len(SESSION_TOKENS),
+        "tokens": {k[:10] + "...": v for k, v in SESSION_TOKENS.items()}
+    }
 
-    image_path = os.path.join(base_dir, image_name)
-
-    # Seguretat bàsica
-    if not os.path.isfile(image_path):
-        raise FileNotFoundError("Image not found")
-
-    return image_path
+def cleanup_old_tokens():
+    """Elimina tokens antics per evitar que la memòria creixi infinitament"""
+    global SESSION_TOKENS
+    cutoff = datetime.now().timestamp() - (TOKEN_EXPIRY_HOURS * 3600)
+    
+    expired = []
+    for token, data in SESSION_TOKENS.items():
+        created = datetime.fromisoformat(data["created_at"]).timestamp()
+        if created < cutoff:
+            expired.append(token)
+    
+    for token in expired:
+        del SESSION_TOKENS[token]
+    
+    if expired:
+        print(f"🧹 [CLEANUP] Eliminats {len(expired)} tokens expirats")
 
