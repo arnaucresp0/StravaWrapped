@@ -1,108 +1,211 @@
 import requests
 from datetime import datetime, timedelta, timezone
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from src.token_manager import get_valid_token
 
 BASE_URL = "https://www.strava.com/api/v3"
 
-def get_all_activities():
+def get_activities_for_last_year():
+    """
+    Versió OPTIMITZADA: Només obté activitats de l'últim any
+    i fa peticions en paral·lel quan calen múltiples pàgines.
+    """
     access_token = get_valid_token()
     headers = {"Authorization": f"Bearer {access_token}"}
-
+    
+    # 1. Filtrar DIRECTAMENT a l'API de Strava
+    one_year_ago = int((datetime.now(timezone.utc) - timedelta(days=365)).timestamp())
+    
+    # 2. Primer, prova una pàgina per veure quantes n'hi ha
+    test_url = f"{BASE_URL}/athlete/activities?page=1&per_page=1&after={one_year_ago}"
+    test_resp = requests.get(test_url, headers=headers, timeout=10)
+    
+    # Si no hi ha activitats
+    if not test_resp.json():
+        return []
+    
+    # 3. Estimar quantes pàgines necessitem (màxim 5 = 1,000 activitats)
     activities = []
-    page = 1
-
-    while True:
-        url = f"{BASE_URL}/athlete/activities?page={page}&per_page=200"
-        r = requests.get(url, headers=headers)
-        data = r.json()
-
-        if not isinstance(data, list) or len(data) == 0:
-            break
-
-        activities.extend(data)
-        page += 1
-
+    
+    # Funció per obtenir una pàgina
+    def fetch_page(page):
+        url = f"{BASE_URL}/athlete/activities?page={page}&per_page=200&after={one_year_ago}"
+        resp = requests.get(url, headers=headers, timeout=10)
+        return resp.json() if resp.status_code == 200 else []
+    
+    # 4. Obtenir pàgines en PARAL·LEL (màxim 3 pàgines alhora)
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        # Prova amb 3 pàgines inicialment (600 activitats)
+        futures = {executor.submit(fetch_page, page): page for page in range(1, 4)}
+        
+        for future in as_completed(futures):
+            page_data = future.result()
+            if isinstance(page_data, list) and page_data:
+                activities.extend(page_data)
+                # Si la pàgina té menys de 200, no hi ha més pàgines
+                if len(page_data) < 200:
+                    # Cancel·lar les altres pàgines si n'hi ha
+                    for f in list(futures.keys()):
+                        if f != future and not f.done():
+                            f.cancel()
+    
     return activities
 
 def get_wrapped_stats():
-    activities = get_all_activities()
-
-    one_year_ago = datetime.now(timezone.utc) - timedelta(days=365)
-
-    filtered = []
-    for a in activities:
-        if "start_date" not in a:
-            continue
-
-        activity_date = datetime.fromisoformat(a["start_date"].replace("Z", "+00:00"))
-        if activity_date > one_year_ago:
-            filtered.append(a)
-
-    # Basic stats
-    total_distance_km = sum(a.get("distance", 0) for a in filtered) / 1000
-    total_time_minutes = sum(a.get("moving_time", 0) for a in filtered) / 60
-    total_time_days = total_time_minutes / (60 * 24)
-    total_elevation = sum(a.get("total_elevation_gain", 0) for a in filtered)
-    total_activities = len(filtered)
-
-    # Most practiced sport
-    sports = Counter(a.get("sport_type", "Unknown") for a in filtered)
-    unique_sports_count = len([s for s in sports if s != "Unknown"])
-    dominant_sport = sports.most_common(1)[0][0] if sports else None
-
-    # Watts → kWh
-    total_watt_seconds = 0
-    for a in filtered:
-        watts = a.get("weighted_average_watts")
-        time = a.get("moving_time", 0)
-        if watts:
-            total_watt_seconds += watts * time
-
-    total_energy_kwh = round(total_watt_seconds / 3_600_000, 2)
-
-    # Most liked activity
-    most_kudos_activity = None
-    if filtered:
-        most_kudos_activity = max(filtered, key=lambda x: x.get("kudos_count", 0))
-
-    # Total PRs
-    total_prs = sum(a.get("pr_count", 0) for a in filtered)
-    # === SOCIAL DATA===
-    #Total kudos
-    total_kudos = sum(a.get("kudos_count", 0) for a in filtered)
-    #Total photos
-    total_photos = sum(a.get("total_photo_count", 0) for a in filtered)
-    #Total comments
-    total_comments = sum(a.get("comment_count", 0) for a in filtered)
-    #Ratio company activities
-    total_athlets = sum(a.get("athlete_count", 0) for a in filtered)
+    """
+    Versió OPTIMITZADA: Un sol pass per calcular totes les estadístiques
+    i evita múltiples iteracions sobre la llista.
+    """
+    activities = get_activities_for_last_year()
     
+    if not activities:
+        return get_empty_stats()
+    
+    # Inicialitza totes les variables en una sola passada
+    stats = {
+        'total_distance': 0,
+        'total_time': 0,
+        'total_elevation': 0,
+        'total_watt_seconds': 0,
+        'total_kudos': 0,
+        'total_photos': 0,
+        'total_comments': 0,
+        'total_athlets': 0,
+        'total_prs': 0,
+        'sports_counter': Counter(),
+        'hour_counter': Counter(),
+        'max_kudos': 0,
+        'most_kudos_activity': None,
+        'total_activities': len(activities)
+    }
+    
+    # UN SOL BUCLE per calcular-ho tot
+    for a in activities:
+        # Distància
+        stats['total_distance'] += a.get("distance", 0)
+        
+        # Temps
+        moving_time = a.get("moving_time", 0)
+        stats['total_time'] += moving_time
+        
+        # Elevació
+        stats['total_elevation'] += a.get("total_elevation_gain", 0)
+        
+        # Watts → kWh
+        watts = a.get("weighted_average_watts")
+        if watts:
+            stats['total_watt_seconds'] += watts * moving_time
+        
+        # Social
+        kudos = a.get("kudos_count", 0)
+        stats['total_kudos'] += kudos
+        if kudos > stats['max_kudos']:
+            stats['max_kudos'] = kudos
+            stats['most_kudos_activity'] = a
+        
+        stats['total_photos'] += a.get("total_photo_count", 0)
+        stats['total_comments'] += a.get("comment_count", 0)
+        stats['total_athlets'] += a.get("athlete_count", 0)
+        stats['total_prs'] += a.get("pr_count", 0)
+        
+        # Esports
+        sport = a.get("sport_type", "Unknown")
+        if sport != "Unknown":
+            stats['sports_counter'][sport] += 1
+        
+        # Hora de l'activitat
+        if "start_date" in a:
+            try:
+                dt = datetime.fromisoformat(a["start_date"].replace("Z", "+00:00"))
+                hour = dt.hour
+                if 5 <= hour < 12:
+                    stats['hour_counter']["morning"] += 1
+                elif 12 <= hour < 19:
+                    stats['hour_counter']["afternoon"] += 1
+                else:
+                    stats['hour_counter']["night"] += 1
+            except:
+                pass
+    
+    # CÀLCULS FINALS
+    total_distance_km = stats['total_distance'] / 1000
+    total_time_minutes = stats['total_time'] / 60
+    total_time_days = total_time_minutes / (60 * 24)
+    total_energy_kwh = round(stats['total_watt_seconds'] / 3_600_000, 2)
+    
+    # Esport dominant
+    dominant_sport = "Unknown"
+    sport_podium_list = []
+    if stats['sports_counter']:
+        dominant_sport = stats['sports_counter'].most_common(1)[0][0]
+        sport_podium_list = stats['sports_counter'].most_common(3)
+    
+    # Temps preferit
+    training_profile = "Matiner"
+    if stats['hour_counter']:
+        dominant_hour = stats['hour_counter'].most_common(1)[0][0]
+        mapping = {"morning": "Matiner", "afternoon": "De tardes", "night": "Nocturn"}
+        training_profile = mapping.get(dominant_hour, "Matiner")
+    
+    # Construcció del podium
+    podium_data = {"first": {"sport": None, "count": 0},
+                   "second": {"sport": None, "count": 0},
+                   "third": {"sport": None, "count": 0}}
+    
+    for i, (sport, count) in enumerate(sport_podium_list[:3]):
+        key = ["first", "second", "third"][i]
+        podium_data[key] = {"sport": sport, "count": count}
+    
+    # Retorna el diccionari final (igual que abans)
     return {
-        "activities_last_year": str(total_activities) + " Activitats",
+        "activities_last_year": str(stats['total_activities']) + " Activitats",
         "total_distance_km": str(round(total_distance_km, 1)) + " Km",
         "distance_comparasion": distance_statistics(total_distance_km),
         "total_time_minutes": str(int(total_time_minutes)) + " min",
         "total_time_days": str(round(total_time_days, 2)) + " dies",
-        "total_elevation_m": str(total_elevation) + " m",
-        "everest_equivalent":everest_equivalents(total_elevation),
+        "total_elevation_m": str(int(stats['total_elevation'])) + " m",
+        "everest_equivalent": everest_equivalents(stats['total_elevation']),
         "dominant_sport": dominant_sport,
-        "sports_practiced": unique_sports_count,
-        "sport_podium": sport_podium(sports),
+        "sports_practiced": len(stats['sports_counter']),
+        "sport_podium": podium_data,
         "total_energy_kwh": str(total_energy_kwh) + " kWh",
         "house_power_days": str(round((total_energy_kwh/9), 1)) + " dies",
         "most_kudos_activity": {
-            "name": most_kudos_activity.get("name") if most_kudos_activity else None,
-            "kudos": most_kudos_activity.get("kudos_count") if most_kudos_activity else 0
+            "name": stats['most_kudos_activity'].get("name") if stats['most_kudos_activity'] else None,
+            "kudos": stats['most_kudos_activity'].get("kudos_count") if stats['most_kudos_activity'] else 0
         },
-        "total_prs": total_prs,
-        "total_kudos": total_kudos,
-        "total_photos": total_photos,
-        "total_comments": total_comments,
-        "social_ratio": social_ratio(total_athlets, total_activities),
-        "train_time": training_time_profile(filtered),
-        "sports_breakdown": sports,
+        "total_prs": stats['total_prs'],
+        "total_kudos": stats['total_kudos'],
+        "total_photos": stats['total_photos'],
+        "total_comments": stats['total_comments'],
+        "social_ratio": social_ratio(stats['total_athlets'], stats['total_activities']),
+        "train_time": training_profile,
+    }
+
+def get_empty_stats():
+    """Retorna estadístiques buides per a usuaris sense activitats"""
+    return {
+        "activities_last_year": "0 Activitats",
+        "total_distance_km": "0.0 Km",
+        "distance_comparasion": "Cap activitat",
+        "total_time_minutes": "0 min",
+        "total_time_days": "0 dies",
+        "total_elevation_m": "0 m",
+        "everest_equivalent": 0.0,
+        "dominant_sport": None,
+        "sports_practiced": 0,
+        "sport_podium": {"first": {"sport": None, "count": 0}, "second": {"sport": None, "count": 0}, "third": {"sport": None, "count": 0}},
+        "total_energy_kwh": "0 kWh",
+        "house_power_days": "0 dies",
+        "most_kudos_activity": {"name": None, "kudos": 0},
+        "total_prs": 0,
+        "total_kudos": 0,
+        "total_photos": 0,
+        "total_comments": 0,
+        "social_ratio": "Solo",
+        "train_time": "Matiner",
     }
 
 def distance_statistics(total_distance_km):
