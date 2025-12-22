@@ -144,10 +144,19 @@ def get_wrapped():
 
 @app.get("/wrapped/image")
 async def generate_wrapped_image_endpoint(request: Request):
-    import time
     start_total = time.time()
     
-    athlete_id = get_current_athlete_id(request)
+    # DEBUG: Mostrar headers per veure si el token arriba
+    token_header = request.headers.get("x-session-token")
+    print(f"🔍 [/wrapped/image] Token header: {token_header[:20] + '...' if token_header else 'None'}")
+    print(f"🔍 [/wrapped/image] Session: {request.session.get('athlete_id')}")
+    
+    try:
+        athlete_id = get_current_athlete_id(request)
+    except HTTPException as e:
+        print(f"🚨 [/wrapped/image] Error auth: {e.detail}")
+        raise
+    
     print(f"⏱️  [TIMING] START /wrapped/image per athlete {athlete_id}")
     
     # 1. Estadístiques
