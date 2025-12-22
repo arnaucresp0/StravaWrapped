@@ -25,7 +25,7 @@ app = FastAPI()
 app.add_middleware(
     SessionMiddleware,
     secret_key=config.SECRET_KEY,
-    session_cookie="strava_wrapped_session",
+    session_cookie="workout_wrapped_session",
     same_site="none",  # Important per cross-site
     https_only=True,   # Requerit amb same_site=none
     max_age=86400,     # 24 hores en segons
@@ -34,7 +34,7 @@ app.add_middleware(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://strava-wrapped-cat.netlify.app",
+        "https://workout-wrapped-cat.netlify.app/",
         config.FRONTEND_URL
     ],
     allow_credentials=True,
